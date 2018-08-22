@@ -13,9 +13,7 @@ require(MASS)
 #  annual_growth_rate = wtemp*Temp + wtem_initxtilegdp1*dummy_poor_country
 
 mu = c(0,-1.655145)
-#Sigma = matrix(c(0.09746524,-0.08330767,-0.08330767,0.23557231),nrow=2,ncol=2,byrow = T)
 mb = matrix(mu,nrow=1)
-#mb = rbind(mb,mvrnorm(1000,mu,Sigma))
 
 g_rich <- function(temp, rid) { return(0)  }
 g_poor <- function(temp, rid) { return((0.2609434-1.655145) * temp) }

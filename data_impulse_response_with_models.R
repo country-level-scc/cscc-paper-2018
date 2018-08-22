@@ -1,10 +1,10 @@
 # Impulse response [mK/GtC]
-require(data.table)
-require(countrycode)
-require(foreach)
-require(stringr)
+library(data.table)
+library(countrycode)
+library(foreach)
+library(stringr)
 
-files <- Sys.glob("pulse/RegionalSCC_pulseuncertainty/*.csv")
+files <- Sys.glob("data/pulse/RegionalSCC_pulseuncertainty/*.csv")
 
 all_pulse = foreach(f=files) %do% {
   
@@ -56,6 +56,8 @@ cpulse <- merge(all_pulse,data.table(Country=all_countries, ISO3=all_iso3),by=c(
 rm(all_pulse)
 
 cpulse = cpulse[,list(model,ccmodel,ISO3,mid_year,temp_pulse)]
+
+setkey(cpulse,ISO3,mid_year)
 
 epulse = cpulse[,list(temp_pulse=mean(temp_pulse)), by=c("mid_year","ISO3")]
 

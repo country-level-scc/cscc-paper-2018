@@ -1,13 +1,18 @@
-# Require the outputs from the stata scripts from BurkeHsiangMiguel2015 Replication code
-# Source: [[http://web.stanford.edu/~mburke/climate]]
+# Burke et al. damage function
 require(data.table)
 
 if(rich_poor){
   
-  # use Rich/Poor lag specification 
-  pb = fread("BurkeHsiangMiguel2015_Replication/data/output/bootstrap/bootstrap_richpoor.csv")
-  mb = as.matrix(pb[,.(temp,temppoor,temp2,temp2poor)])
-  
+  if(lag5){
+    # use Rich/Poor 5-lag specification 
+    pb = fread("data/BurkeHsiangMiguel2015_Replication/data/output/bootstrap/bootstrap_richpoor_5lag.csv")
+    mb = as.matrix(pb[,.(tlin,tlinpoor,tsq,tsqpoor)])
+  } else {
+    # use Rich/Poor no lag specification 
+    pb = fread("data/BurkeHsiangMiguel2015_Replication/data/output/bootstrap/bootstrap_richpoor.csv")
+    mb = as.matrix(pb[,.(temp,temppoor,temp2,temp2poor)])
+  }
+
   # temp: projected annual average temperature in the country in any year after 2010
   # temp_baseline: average temperature in the country between 1980-2010 (base period)
   # gdpcap_tm1: GDP/capita in the previous year
@@ -31,9 +36,15 @@ if(rich_poor){
   
 } else {
   
-  # use Pooled lag specification 
-  pb = fread("BurkeHsiangMiguel2015_Replication/data/output/bootstrap/bootstrap_noLag.csv")
-  mb = as.matrix(pb[,.(temp,temp2)])
+  if(lag5){
+    # pooled bootstrap_5Lag 
+    pb = fread("data/BurkeHsiangMiguel2015_Replication/data/output/bootstrap/bootstrap_5Lag.csv")
+    mb = as.matrix(pb[,.(tlin,tsq)])
+  } else {
+    # pooled bootstrap_noLag 
+    pb = fread("data/BurkeHsiangMiguel2015_Replication/data/output/bootstrap/bootstrap_noLag.csv")
+    mb = as.matrix(pb[,.(temp,temp2)])
+  }
   
   g_pool <- function(temp, rid) { return(mb[rid+1,1] * temp + mb[rid+1,2] * temp^2) }
   warming_effect <- function(temp, temp_baseline, gdpcap_tm1, rid, out_of_sample=T){
@@ -51,7 +62,7 @@ if(rich_poor){
 
 
 # get GDP per capita* separating between poor and rich
-if(!file.exists(file.path("historical_gdp.RData"))){
+if(!file.exists(file.path("data","historical_gdp.RData"))){
   # get YSTAR from WDI
   library(WDI)
   library(data.table)
@@ -74,6 +85,17 @@ if(!file.exists(file.path("historical_gdp.RData"))){
   
   save(h_gdpcap, Y_STAR, file = file.path("data","historical_gdp.RData"))
 } else {
-  load(file.path("historical_gdp.RData"))
+  load(file.path("data","historical_gdp.RData"))
 }
 
+if(FALSE){
+  require(ggplot2)
+  p = ggplot() + 
+    geom_line(aes(x=temps,y=rich_val,linetype="rich"),size=1) +
+    geom_line(aes(x=temps,y=poor_val,linetype="poor"),size=1) +
+    scale_linetype(name="Country") +
+    labs(x="annual average temperature",y="annual growth of GDP per capita") +
+    theme_tufte() +
+    theme(legend.justification=c(1,0), legend.position=c(1,0)) 
+  p
+}
