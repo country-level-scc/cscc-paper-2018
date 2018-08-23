@@ -7,4 +7,7 @@
 
 # RStudio files
 .Rproj.user/
+*.Rproj
 
+# Output dirs
+res*/

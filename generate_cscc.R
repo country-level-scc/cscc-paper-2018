@@ -23,7 +23,7 @@ options:
 #opts <- docopt(doc)
 
 # Some tests
-#opts <- docopt(doc, "-s SSP3 -c rcp85 -r 1 -w -a -d")
+opts <- docopt(doc, "-s SSP3 -c rcp85 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -w -d -f djo")
 
@@ -129,14 +129,14 @@ if (dmg_func == "bootstrap" & clim == "ensemble") {
 }
 
 # Load data 
-source("data_gdpssp.R")
+source("modules/gdpssp.R")
 if (dmg_ref == "") {
-  source("data_burke_replica.R")
+  source("modules/bhm_replica.R")
 } else {
-  source("data_djo_replica.R")
+  source("modules/djo_replica.R")
 }
-source("data_cmip5.R")
-source("data_impulse_response_with_models.R")
+source("modules/cmip5.R")
+source("modules/impulse_response.R")
 print(Sys.time() - t0)
 
 # All combination of models available (CC x GCM for each RCP)
