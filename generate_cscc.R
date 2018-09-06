@@ -20,10 +20,10 @@ options:
  -a         5-lag damage function specification (default, 0-lag)
  -f <name>  damage function (default=bhm (Burke et al.), djo (Dell et al.))
  -w         save raw data' -> doc
-#opts <- docopt(doc)
+opts <- docopt(doc)
 
 # Some tests
-opts <- docopt(doc, "-s SSP3 -c rcp85 -r 1 -w -a -d")
+#opts <- docopt(doc, "-s SSP3 -c rcp85 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -w -d -f djo")
 
