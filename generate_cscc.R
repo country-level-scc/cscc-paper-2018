@@ -2,6 +2,7 @@
 #
 # Any questions: laurent.drouet@eiee.org
 # Launch Rscript ./generate_cscc.R to see usage
+# Check the Rmd file for an example of use
 # Outputs are expressed in USD 2005
 
 library(data.table)
@@ -23,6 +24,7 @@ options:
 opts <- docopt(doc)
 
 # Some tests
+#opts <- docopt(doc, "-s SSP2 -c rcp60 -w") # Default case
 #opts <- docopt(doc, "-s SSP3 -c rcp85 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -w -d -f djo")

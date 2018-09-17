@@ -1,0 +1,100 @@
+---
+title: "Computation of the Country-level Social Cost of Carbon"
+author: "Laurent Drouet"
+output:
+  html_document:
+    df_print: paged
+---
+
+This page presents how to compute the national contributions to 
+the social cost of carbon, showing the methodology applied in 
+"K. Ricke, L. Drouet, K. Caldeira and M. Tavoni, 
+*Country-level Social Cost of Carbon*,
+**Nature Climate Change**.
+DOI: 10.1038/s41558-018-0282-y"
+using the default specification of the BHM damage
+function (refered to BHM SR in the paper).
+
+First, call the script specifying the socio-ecnomic projection (SSP2) and 
+the climate projection (rcp60). 
+The additionnal parameter "-w" will save the set of generated CSCC in a file.
+
+
+```{r}
+CMD = "Rscript --vanilla generate_cscc.R -s SSP2 -c rcp60 -w"
+system(CMD)
+```
+
+The script will produce 2 RData files stored in the res_stat subfolder:
+
+File  | Content
+------------- | -------------
+raw_scc_SSP2_rcp60_constant_estimates_climensemble.RData  | The generated CSCCs
+statscc_SSP2_rcp60_constant_estimates_climensemble.RData  | Some statistics on the generated CSCCs
+
+
+```{r}
+library(data.table)
+load('res_stat/statscc_SSP2_rcp60_constant_estimates_climensemble.RData')
+```
+
+This will load a data.frame called 'stat_scc' containing the mean, and the quantiles
+10%, 25%, 50%, 75% and 90% of the CSCC distribution.
+
+The column ID is composed by 4 fields separated by an underscore '_':
+
+1. eta (for endogenous discount rate)
+2. prtp (for endogenous discount rate)
+3. dr (for fixed discount rate)
+4. ISO3 country code (including WLD, for world)
+
+Let's look at the US distribution of CSCC of an endogenous discounting (note that these values generated  from the script are in USD2005):
+
+```{r}
+stat_scc[ID == "2_1p5_NA_USA",] 
+```
+
+The median estimates of the CSCC for the USA is 
+
+```{r}
+usd05 <- 1.10774 # to convert from USD2005 to USD2010
+stat_scc[ID == "2_1p5_NA_USA",`50%`] * usd05 
+```
+
+As the size of the sample may vary from one specification to another, for example, if we consider only the central estimates from the climate mode ensemble with the damage function estimates. For the paper, we systematically computes the statistics using bayesan bootstrap resampling. In this case, we need
+to load the original set of generated CSCC.
+
+```{r}
+load('res_stat/raw_scc_SSP2_rcp60_constant_estimates_climensemble.RData')
+```
+
+The generated values are stored in a list indexed by the ID as described above.
+
+```{r}
+cscc_usa <- store_scc_flat[["2_1p5_NA_USA"]]
+cscc_usa <- cscc_usa * usd05
+summary(cscc_usa)
+```
+
+```{r}
+plot(density(cscc_usa), main = "Density plot of the USA CSCC")
+```
+
+
+Looking at the summary, we hopefully obtain the same median value than before. 
+But, we can check how accurate is the median using bayesan bootstrap resampling.
+
+```{r}
+library(bayesboot)
+res <- bayesboot(cscc_usa, function(x) quantile(x,0.5), R = 10000, R2 = 10000)
+summary(res)
+```
+
+In the paper, we report the value of the median of the posterior distribution for all statistics.
+Thus, for the 66.7% confidence interval, we report the median of the posterior
+distribution for the quantiles 16.7% and 83.3%.
+
+```{r}
+plot(density(res$`50%`), main = "Posterior distribution of the USA CSCC median")
+```
+
