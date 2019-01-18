@@ -51,31 +51,26 @@ if (rich_poor) {
 
 }
 
-# get GDP per capita* separating between poor and rich
-if (!file.exists(file.path("data","historical_gdp.RData"))) {
-  # get YSTAR from WDI
-  library(WDI)
-  library(data.table)
-  hyear <- 1980
-  #Load historical GDP per capita
-  #"NY.GDP.MKTP.KN"
-  #"GDP, PPP (constant 2005 international $)"
-  res <- data.table(WDI(indicator = "NY.GDP.MKTP.KN", start = hyear, end = hyear, extra = T))
-  hgdp <- res[!region %in% c("Aggregates") & !is.na(iso3c),
-              .(country,iso3 = iso3c,gdp = NY.GDP.MKTP.KN)]
-  #"SP.POP.TOTL"
-  #"Population, total"
-  res <- data.table(WDI(indicator = "SP.POP.TOTL", start = hyear, end = hyear, extra = T))
-  hpop <- res[!region %in% c("Aggregates") & !is.na(iso3c),
-              .(country,iso3 = iso3c,pop = SP.POP.TOTL)]
+# get GDP per capita separating between poor and rich
+if(!file.exists(file.path("data","historical_gdp_burke.RData"))){
+
+# Y_STAR from BHM replication code
+library(haven)
+GrowthClimateDataset <- read_dta("data/BurkeHsiangMiguel2015_Replication/data/input/GrowthClimateDataset.dta")
+gdpCap = GrowthClimateDataset$TotGDP/GrowthClimateDataset$Pop
+dta <- data.frame(GrowthClimateDataset,gdpCap)
+dta <- data.table(dta)
+
+mt <- dta[year>=1980 & is.na(UDel_temp_popweight)==F & is.na(growthWDI)==F,
+          .(gdpCap = mean(gdpCap,na.rm=T)),
+          by=c("iso")]
+
+Y_STAR_BHM <- median(mt$gdpCap) # 2268.528 [USD2005]
+
+save(Y_STAR_BHM, file = file.path("data","historical_gdp_burke.RData"))
   
-  h_gdpcap <- merge(hgdp,hpop,by = c("country","iso3"))
-  h_gdpcap[, gdpcap := gdp/pop]
-  h_gdpcap <- h_gdpcap[!is.na(gdpcap)]
-  
-  Y_STAR <- median(h_gdpcap$gdpcap,na.rm = T) # 20715.44
-  
-  save(h_gdpcap, Y_STAR, file = file.path("data","historical_gdp.RData"))
 } else {
-  load(file.path("data","historical_gdp.RData"))
+  load(file.path("data","historical_gdp_burke.RData"))
 }
+
+Y_STAR <- Y_STAR_BHM

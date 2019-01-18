@@ -15,8 +15,8 @@ require(MASS)
 mu = c(0,-1.655145)
 mb = matrix(mu,nrow=1)
 
-g_rich <- function(temp, rid) { return(0)  }
-g_poor <- function(temp, rid) { return((0.2609434-1.655145) * temp) }
+g_rich <- function(temp, rid) { return(-0.191 / 100 * temp) }
+g_poor <- function(temp, rid) { return(-1.041 / 100 * temp) }
 
 if(F){
   xx = seq(-0.5,1.5,by=0.1)
@@ -43,29 +43,21 @@ warming_effect <- function(temp, temp_tm1, gdpcap_tm1, runid, out_of_sample=T){
 }
 
 
-# get GDP per capita* separating between poor and rich
-if(!file.exists(file.path("data","historical_gdp.RData"))){
-  # get YSTAR from WDI
-  library(WDI)
-  library(data.table)
-  hyear=1980
-  #Load historical GDP per capita
-  #"NY.GDP.MKTP.KN"
-  #"GDP, PPP (constant 2005 international $)"
-  res = data.table(WDI(indicator="NY.GDP.MKTP.KN", start=hyear, end=hyear, extra=T))
-  hgdp = res[!region %in% c("Aggregates") & !is.na(iso3c),list(country,iso3=iso3c,gdp=NY.GDP.MKTP.KN)]
-  #"SP.POP.TOTL"
-  #"Population, total"
-  res = data.table(WDI(indicator="SP.POP.TOTL", start=hyear, end=hyear, extra=T))
-  hpop = res[!region %in% c("Aggregates") & !is.na(iso3c),list(country,iso3=iso3c,pop=SP.POP.TOTL)]
+# get GDP per capita separating between poor and rich
+if(!file.exists(file.path("data","historical_gdp_djo.RData"))){
   
-  h_gdpcap = merge(hgdp,hpop,by=c("country","iso3"))
-  h_gdpcap[, gdpcap:=gdp/pop]
-  h_gdpcap = h_gdpcap[!is.na(gdpcap)]
+  # Y_STAR from DJO replication code
+  # Poor is defined as a dummy for a country having below median PPP GDP  per capita in its first year in the data.
+  library(haven)
+  climate_panel <- read_dta("data/AEJ Mac2010-0092-reproduction/climate_panel.dta")
+  climate_panel <- data.table(climate_panel)
   
-  Y_STAR <- median(h_gdpcap$gdpcap,na.rm = T) # 20715.44
+  Y_STAR_DJO <- median(climate_panel[year == 1950,exp(lnrgdpl_t0)], na.rm = T) # 2449.36
   
-  save(h_gdpcap, Y_STAR, file = file.path("data","historical_gdp.RData"))
+  save(Y_STAR_DJO, file = file.path("data","historical_gdp_djo.RData"))
+  
 } else {
-  load(file.path("data","historical_gdp.RData"))
+  load(file.path("data","historical_gdp_djo.RData"))
 }
+
+Y_STAR <- Y_STAR_DJO

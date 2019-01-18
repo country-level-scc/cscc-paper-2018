@@ -12,5 +12,13 @@ Other materials are available at https://country-level-scc.github.io.
 
 The main script is `generate_cscc.R`
 
-An example is provided in `country-level-social-cost-of-carbon.Rmd`
+An example is provided by `country-level-social-cost-of-carbon.Rmd`
 
+## Changelog
+
+v1 (26-16-2018)
+* Version published with the paper
+
+v2 (18-01-2019)
+* Update Rich/Poor threshold: 2268.528$ for BHM, 2449.36$ for djo_richpoor.
+* Use 5-lag DJO specification for DJO alternative specification.
