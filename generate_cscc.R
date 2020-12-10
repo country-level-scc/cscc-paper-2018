@@ -21,10 +21,12 @@ options:
  -a         5-lag damage function specification (default, 0-lag)
  -f <name>  damage function (default=bhm (Burke et al.), djo (Dell et al.))
  -w         save raw data' -> doc
-opts <- docopt(doc)
+
+
+#opts <- docopt(doc)
 
 # Some tests
-#opts <- docopt(doc, "-s SSP2 -c rcp60 -w") # Default case
+opts <- docopt(doc, "-s SSP2 -c rcp60 -w") # Default case
 #opts <- docopt(doc, "-s SSP3 -c rcp85 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -w -d -f djo")
@@ -381,9 +383,21 @@ for (nid in runid) {
   }
   wscc = cscc[,list(scc = sum(scc)),by = c("prtp","eta","model_id")]
   
+  
+  # Also calculate the world social cost of carbon under equality conditions
+  mean_gdp_per_cap_world = weighted.mean(
+    gdpcap[year == impulse_year & SSP==ssp]$gdpcap, 
+    gdpcap[year == impulse_year & SSP==ssp]$pop
+  )
+  weights = gdpcap[year == impulse_year & SSP==ssp, c("ISO3", "gdpcap")]
+  weights$weight = (mean_gdp_per_cap_world / weights$gdpcap)^.eta
+  eq_cscc = merge(x=cscc, y=weights, by="ISO3", all.x=TRUE)
+  eq_wscc = eq_cscc[,list(scc = sum(scc * weight)), by = c("prtp","eta","model_id")]
+  
   # Comparison EPA (SC-CO2) [[http://www3.epa.gov/climatechange/EPAactivities/economics/scc.html]]
   drs = c(2.5,3,5) #%
   cscc0 = NULL
+  
   for (.dr in drs) {
     dscc = res_scc[,list(ISO3,model_id,year,scc)]
     dscc[,dfac := (1/(1 + .dr/100)^(year - impulse_year))]
@@ -395,6 +409,10 @@ for (nid in runid) {
   wscc = rbindlist(list(wscc,cscc0[,.(scc = sum(scc)),
                                    by = c("dr","model_id")]),
                    fill = T)
+  weighted_cscc0 = merge(x = cscc0, y = weights[, c("ISO3", "weight")], by="ISO3")
+  eq_wscc = rbindlist(list(eq_wscc, weighted_cscc0[,.(scc = sum(scc * weight)),
+                                                   by = c("dr","model_id")]),
+                      fill = T)
   
   print(Sys.time() - t0)
   
