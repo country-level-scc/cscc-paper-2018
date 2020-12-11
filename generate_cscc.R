@@ -248,6 +248,8 @@ project_gdpcap <- function(SD){
 
 lcscc = NULL
 lwscc = NULL
+leq_wscc = NULL
+lusa_eq_wscc = NULL
 
 for (nid in runid) {
   
@@ -369,7 +371,10 @@ for (nid in runid) {
   # based on Table 3.2 in IPCC AR5 WG2 Chapter 3
   # added 3% prtp to be compatible with EPA
   prtps = c(2) # %
-  etas = c(1.5) 
+  etas = c(1) 
+  if(any(size(etas) > 1)) {
+    stop("Global equality weighting breaks down with multiple values of eta")
+  }
   
   cscc = NULL
   for (.prtp in prtps) {
@@ -390,7 +395,7 @@ for (nid in runid) {
     gdpcap[year == impulse_year & SSP==ssp]$pop
   )
   weights = gdpcap[year == impulse_year & SSP==ssp, c("ISO3", "gdpcap")]
-  weights$weight = (mean_gdp_per_cap_world / weights$gdpcap)^.eta
+  weights$weight = (mean_gdp_per_cap_world / weights$gdpcap)^.eta  # Assumes only one value of eta
   eq_cscc = merge(x=cscc, y=weights, by="ISO3", all.x=TRUE)
   eq_wscc = eq_cscc[,list(scc = sum(scc * weight)), by = c("prtp","eta","model_id")]
   
@@ -418,22 +423,30 @@ for (nid in runid) {
   
   # ID to be used
   wscc[, ISO3 := "WLD"]
+  eq_wscc[, ISO3 := "WLD"]
+  usa_eq_wscc[, ISO3 := "WLD"]
   cscc[, ID := paste(prtp, eta, dr, ISO3, sep = "_")]
   wscc[, ID := paste(prtp, eta, dr, ISO3, sep = "_")]
+  eq_wscc[, ID := paste(prtp, eta, dr, ISO3, sep = "_")]
   cscc[, ID := str_replace(ID, "\\.", "p")]
   wscc[, ID := str_replace(ID, "\\.", "p")]
-  
+  eq_wscc[, ID := str_replace(ID, "\\.", "p")]
   
   lcscc = c(lcscc, list(cscc[, .(scc, ID)]))
   lwscc = c(lwscc, list(wscc[, .(scc, ID)]))
-  
+  leq_wscc = c(leq_wscc, list(eq_wscc[, .(scc, ID)]))
 }
 
 cscc = rbindlist(lcscc)
 wscc = rbindlist(lwscc)
+eq_wscc = rbindlist(leq_wscc)
+usa_eq_wscc = eq_wscc
+usa_eq_wscc$scc = usa_eq_wscc$scc/weights[ISO3 == "USA"]$weight
 
 store_scc <- rbind(cscc, wscc)
 store_scc_flat <- split(store_scc$scc, store_scc$ID)
+store_eq_wscc_flat <- split(eq_wscc$scc, eq_wscc$ID)
+store_usa_eq_wscc_flat <- split(usa_eq_wscc$scc, usa_eq_wscc$ID)
 
 print(Sys.time() - t0)
 
@@ -457,16 +470,31 @@ if (save_raw_data) {
 if (dmg_func == "estimates" | clim == "mean") {
   stat_scc <- rbindlist(lapply(store_scc_flat, compute_stat))
   stat_scc$ID <- names(store_scc_flat)
+  eq_stat_wscc = rbindlist(lapply(store_eq_wscc_flat, compute_stat))
+  usa_eq_stat_wscc = rbindlist(lapply(store_usa_eq_wscc_flat, compute_stat))
   dir.create(file.path(resdir), recursive = T, showWarnings = F)
   filename = file.path(resdir,paste0("statscc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
   save(stat_scc, file = filename)
   print(paste(filename,"saved"))
+  eq_filename = file.path(resdir,paste0("eq_statscc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
+  usa_eq_filename = file.path(resdir,paste0("usa_eq_statscc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
+  save(eq_stat_wscc, file = eq_filename)
+  print(paste(eq_filename,"saved"))
+  save(usa_eq_stat_wscc, file = usa_eq_filename)
+  print(paste(usa_eq_filename,"saved"))
+  
 } else {
   ddd = file.path(resboot,paste0(ssp,"-",.rcp))
   dir.create(ddd, recursive = T, showWarnings = F)
   filename = file.path(ddd,paste0("store_scc_",project_val,"_",runid,dmg_ref,".RData"))
   save(store_scc_flat, file = filename)
   print(paste(filename,"saved"))
+  eq_filename = file.path(resdir,paste0("eq_store_scc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
+  usa_eq_filename = file.path(resdir,paste0("usa_eq_store_scc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
+  save(store_eq_wscc_flat, file = eq_filename)
+  print(paste(eq_filename,"saved"))
+  save(store_usa_eq_wscc_flat, file = usa_eq_filename)
+  print(paste(usa_eq_filename,"saved"))
 }
 print(Sys.time() - t0)
 print("end")
