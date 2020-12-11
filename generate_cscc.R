@@ -249,7 +249,7 @@ project_gdpcap <- function(SD){
 lcscc = NULL
 lwscc = NULL
 leq_wscc = NULL
-lusa_eq_wscc = NULL
+lsom_eq_wscc = NULL
 
 for (nid in runid) {
   
@@ -424,7 +424,6 @@ for (nid in runid) {
   # ID to be used
   wscc[, ISO3 := "WLD"]
   eq_wscc[, ISO3 := "WLD"]
-  usa_eq_wscc[, ISO3 := "WLD"]
   cscc[, ID := paste(prtp, eta, dr, ISO3, sep = "_")]
   wscc[, ID := paste(prtp, eta, dr, ISO3, sep = "_")]
   eq_wscc[, ID := paste(prtp, eta, dr, ISO3, sep = "_")]
@@ -440,13 +439,14 @@ for (nid in runid) {
 cscc = rbindlist(lcscc)
 wscc = rbindlist(lwscc)
 eq_wscc = rbindlist(leq_wscc)
-usa_eq_wscc = eq_wscc
-usa_eq_wscc$scc = usa_eq_wscc$scc/weights[ISO3 == "USA"]$weight
+som_eq_wscc = eq_wscc
+dollar_val_2020 = 1.35
+som_eq_wscc$scc = som_eq_wscc$scc/weights[ISO3 == "SOM"]$weight
 
 store_scc <- rbind(cscc, wscc)
 store_scc_flat <- split(store_scc$scc, store_scc$ID)
 store_eq_wscc_flat <- split(eq_wscc$scc, eq_wscc$ID)
-store_usa_eq_wscc_flat <- split(usa_eq_wscc$scc, usa_eq_wscc$ID)
+store_som_eq_wscc_flat <- split(som_eq_wscc$scc, som_eq_wscc$ID)
 
 print(Sys.time() - t0)
 
@@ -471,17 +471,17 @@ if (dmg_func == "estimates" | clim == "mean") {
   stat_scc <- rbindlist(lapply(store_scc_flat, compute_stat))
   stat_scc$ID <- names(store_scc_flat)
   eq_stat_wscc = rbindlist(lapply(store_eq_wscc_flat, compute_stat))
-  usa_eq_stat_wscc = rbindlist(lapply(store_usa_eq_wscc_flat, compute_stat))
+  som_eq_stat_wscc = rbindlist(lapply(store_som_eq_wscc_flat, compute_stat))
   dir.create(file.path(resdir), recursive = T, showWarnings = F)
   filename = file.path(resdir,paste0("statscc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
   save(stat_scc, file = filename)
   print(paste(filename,"saved"))
   eq_filename = file.path(resdir,paste0("eq_statscc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
-  usa_eq_filename = file.path(resdir,paste0("usa_eq_statscc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
+  som_eq_filename = file.path(resdir,paste0("som_eq_statscc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
   save(eq_stat_wscc, file = eq_filename)
   print(paste(eq_filename,"saved"))
-  save(usa_eq_stat_wscc, file = usa_eq_filename)
-  print(paste(usa_eq_filename,"saved"))
+  save(som_eq_stat_wscc, file = som_eq_filename)
+  print(paste(som_eq_filename,"saved"))
   
 } else {
   ddd = file.path(resboot,paste0(ssp,"-",.rcp))
@@ -490,11 +490,11 @@ if (dmg_func == "estimates" | clim == "mean") {
   save(store_scc_flat, file = filename)
   print(paste(filename,"saved"))
   eq_filename = file.path(resdir,paste0("eq_store_scc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
-  usa_eq_filename = file.path(resdir,paste0("usa_eq_store_scc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
+  som_eq_filename = file.path(resdir,paste0("som_eq_store_scc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
   save(store_eq_wscc_flat, file = eq_filename)
   print(paste(eq_filename,"saved"))
-  save(store_usa_eq_wscc_flat, file = usa_eq_filename)
-  print(paste(usa_eq_filename,"saved"))
+  save(store_som_eq_wscc_flat, file = som_eq_filename)
+  print(paste(som_eq_filename,"saved"))
 }
 print(Sys.time() - t0)
 print("end")
