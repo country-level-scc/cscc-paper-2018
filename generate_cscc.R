@@ -439,8 +439,10 @@ for (nid in runid) {
 cscc = rbindlist(lcscc)
 wscc = rbindlist(lwscc)
 eq_wscc = rbindlist(leq_wscc)
-som_eq_wscc = eq_wscc
+
 dollar_val_2020 = 1.35
+eq_wscc$scc = dollar_val_2020 * eq_wscc$scc
+som_eq_wscc = eq_wscc
 som_eq_wscc$scc = som_eq_wscc$scc/weights[ISO3 == "SOM"]$weight
 
 store_scc <- rbind(cscc, wscc)
@@ -470,14 +472,16 @@ if (save_raw_data) {
 if (dmg_func == "estimates" | clim == "mean") {
   stat_scc <- rbindlist(lapply(store_scc_flat, compute_stat))
   stat_scc$ID <- names(store_scc_flat)
-  eq_stat_wscc = rbindlist(lapply(store_eq_wscc_flat, compute_stat))
-  som_eq_stat_wscc = rbindlist(lapply(store_som_eq_wscc_flat, compute_stat))
+  eq_stat_wscc <-  rbindlist(lapply(store_eq_wscc_flat, compute_stat))
+  eq_stat_wscc$ID <- names(store_eq_wscc_flat)
+  som_eq_stat_wscc <-  rbindlist(lapply(store_som_eq_wscc_flat, compute_stat))
+  som_eq_stat_wscc$ID <- names(store_som_eq_wscc_flat)
   dir.create(file.path(resdir), recursive = T, showWarnings = F)
   filename = file.path(resdir,paste0("statscc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
   save(stat_scc, file = filename)
   print(paste(filename,"saved"))
-  eq_filename = file.path(resdir,paste0("eq_statscc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
-  som_eq_filename = file.path(resdir,paste0("som_eq_statscc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
+  eq_filename = file.path(resdir,paste0("eq_statscc_2020d",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
+  som_eq_filename = file.path(resdir,paste0("som_eq_statscc_2020d",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
   save(eq_stat_wscc, file = eq_filename)
   print(paste(eq_filename,"saved"))
   save(som_eq_stat_wscc, file = som_eq_filename)
@@ -489,8 +493,8 @@ if (dmg_func == "estimates" | clim == "mean") {
   filename = file.path(ddd,paste0("store_scc_",project_val,"_",runid,dmg_ref,".RData"))
   save(store_scc_flat, file = filename)
   print(paste(filename,"saved"))
-  eq_filename = file.path(resdir,paste0("eq_store_scc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
-  som_eq_filename = file.path(resdir,paste0("som_eq_store_scc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
+  eq_filename = file.path(resdir,paste0("eq_store_scc_2020d",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
+  som_eq_filename = file.path(resdir,paste0("som_eq_store_scc_2020d",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
   save(store_eq_wscc_flat, file = eq_filename)
   print(paste(eq_filename,"saved"))
   save(store_som_eq_wscc_flat, file = som_eq_filename)
