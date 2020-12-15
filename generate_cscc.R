@@ -249,7 +249,7 @@ project_gdpcap <- function(SD){
 lcscc = NULL
 lwscc = NULL
 leq_wscc = NULL
-lsom_eq_wscc = NULL
+leri_eq_wscc = NULL
 
 for (nid in runid) {
   
@@ -371,7 +371,7 @@ for (nid in runid) {
   # based on Table 3.2 in IPCC AR5 WG2 Chapter 3
   # added 3% prtp to be compatible with EPA
   prtps = c(2) # %
-  etas = c(1) 
+  etas = c(1.5) 
   if(any(size(etas) > 1)) {
     stop("Global equality weighting breaks down with multiple values of eta")
   }
@@ -397,6 +397,8 @@ for (nid in runid) {
   weights = gdpcap[year == impulse_year & SSP==ssp, c("ISO3", "gdpcap")]
   weights$weight = (mean_gdp_per_cap_world / weights$gdpcap)^.eta  # Assumes only one value of eta
   eq_cscc = merge(x=cscc, y=weights, by="ISO3", all.x=TRUE)
+  # The Somalian data is bad so we remove it entirely
+  eq_cscc <- eq_cscc[ISO3 != "SOM",]
   eq_wscc = eq_cscc[,list(scc = sum(scc * weight)), by = c("prtp","eta","model_id")]
   
   # Comparison EPA (SC-CO2) [[http://www3.epa.gov/climatechange/EPAactivities/economics/scc.html]]
@@ -442,13 +444,13 @@ eq_wscc = rbindlist(leq_wscc)
 
 dollar_val_2020 = 1.35
 eq_wscc$scc = dollar_val_2020 * eq_wscc$scc
-som_eq_wscc = eq_wscc
-som_eq_wscc$scc = som_eq_wscc$scc/weights[ISO3 == "SOM"]$weight
+eri_eq_wscc = eq_wscc
+eri_eq_wscc$scc = eri_eq_wscc$scc/weights[ISO3 == "ERI"]$weight
 
 store_scc <- rbind(cscc, wscc)
 store_scc_flat <- split(store_scc$scc, store_scc$ID)
 store_eq_wscc_flat <- split(eq_wscc$scc, eq_wscc$ID)
-store_som_eq_wscc_flat <- split(som_eq_wscc$scc, som_eq_wscc$ID)
+store_eri_eq_wscc_flat <- split(eri_eq_wscc$scc, eri_eq_wscc$ID)
 
 print(Sys.time() - t0)
 
@@ -474,19 +476,19 @@ if (dmg_func == "estimates" | clim == "mean") {
   stat_scc$ID <- names(store_scc_flat)
   eq_stat_wscc <-  rbindlist(lapply(store_eq_wscc_flat, compute_stat))
   eq_stat_wscc$ID <- names(store_eq_wscc_flat)
-  som_eq_stat_wscc <-  rbindlist(lapply(store_som_eq_wscc_flat, compute_stat))
-  som_eq_stat_wscc$ID <- names(store_som_eq_wscc_flat)
+  eri_eq_stat_wscc <-  rbindlist(lapply(store_eri_eq_wscc_flat, compute_stat))
+  eri_eq_stat_wscc$ID <- names(store_eri_eq_wscc_flat)
   dir.create(file.path(resdir), recursive = T, showWarnings = F)
   savestring = paste0(ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,"_eta_",.eta,".RData")
   filename = file.path(resdir,paste0("statscc_",savestring))
   save(stat_scc, file = filename)
   print(paste(filename,"saved"))
   eq_filename = file.path(resdir,paste0("eq_statscc_2020d",savestring))
-  som_eq_filename = file.path(resdir,paste0("som_eq_statscc_2020d",savestring))
+  eri_eq_filename = file.path(resdir,paste0("eri_eq_statscc_2020d",savestring))
   save(eq_stat_wscc, file = eq_filename)
   print(paste(eq_filename,"saved"))
-  save(som_eq_stat_wscc, file = som_eq_filename)
-  print(paste(som_eq_filename,"saved"))
+  save(eri_eq_stat_wscc, file = eri_eq_filename)
+  print(paste(eri_eq_filename,"saved"))
   
 } else {
   ddd = file.path(resboot,paste0(ssp,"-",.rcp))
@@ -496,11 +498,11 @@ if (dmg_func == "estimates" | clim == "mean") {
   save(store_scc_flat, file = filename)
   print(paste(filename,"saved"))
   eq_filename = file.path(resdir,paste0("eq_store_scc_2020d",savestring))
-  som_eq_filename = file.path(resdir,paste0("som_eq_store_scc_2020d",savestring))
+  eri_eq_filename = file.path(resdir,paste0("eri_eq_store_scc_2020d",savestring))
   save(store_eq_wscc_flat, file = eq_filename)
   print(paste(eq_filename,"saved"))
-  save(store_som_eq_wscc_flat, file = som_eq_filename)
-  print(paste(som_eq_filename,"saved"))
+  save(store_eri_eq_wscc_flat, file = eri_eq_filename)
+  print(paste(eri_eq_filename,"saved"))
 }
 print(Sys.time() - t0)
 print("end")
