@@ -26,8 +26,8 @@ options:
 #opts <- docopt(doc)
 
 # Some tests
-opts <- docopt(doc, "-s SSP2 -c rcp60 -w") # Default case
-#opts <- docopt(doc, "-s SSP3 -c rcp85 -r 1 -w -a -d")
+opts <- docopt(doc, "-s SSP5 -c rcp45 -w") # Default case
+#opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -w -d -f djo")
 
@@ -371,7 +371,7 @@ for (nid in runid) {
   # based on Table 3.2 in IPCC AR5 WG2 Chapter 3
   # added 3% prtp to be compatible with EPA
   prtps = c(2) # %
-  etas = c(1.5) 
+  etas = c(1) 
   if(any(size(etas) > 1)) {
     stop("Global equality weighting breaks down with multiple values of eta")
   }
@@ -470,39 +470,47 @@ if (save_raw_data) {
   filename = file.path(resdir,paste0("raw_scc_",ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,".RData"))
   save(store_scc_flat, file = filename)
 }
-
+eq_stat_wscc <-  rbindlist(lapply(store_eq_wscc_flat, compute_stat))
+eq_stat_wscc$ID <- names(store_eq_wscc_flat)
 if (dmg_func == "estimates" | clim == "mean") {
   stat_scc <- rbindlist(lapply(store_scc_flat, compute_stat))
   stat_scc$ID <- names(store_scc_flat)
-  eq_stat_wscc <-  rbindlist(lapply(store_eq_wscc_flat, compute_stat))
-  eq_stat_wscc$ID <- names(store_eq_wscc_flat)
-  eri_eq_stat_wscc <-  rbindlist(lapply(store_eri_eq_wscc_flat, compute_stat))
-  eri_eq_stat_wscc$ID <- names(store_eri_eq_wscc_flat)
   dir.create(file.path(resdir), recursive = T, showWarnings = F)
   savestring = paste0(ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,"_eta_",.eta,".RData")
   filename = file.path(resdir,paste0("statscc_",savestring))
   save(stat_scc, file = filename)
   print(paste(filename,"saved"))
-  eq_filename = file.path(resdir,paste0("eq_statscc_2020d",savestring))
-  eri_eq_filename = file.path(resdir,paste0("eri_eq_statscc_2020d",savestring))
-  save(eq_stat_wscc, file = eq_filename)
-  print(paste(eq_filename,"saved"))
-  save(eri_eq_stat_wscc, file = eri_eq_filename)
-  print(paste(eri_eq_filename,"saved"))
-  
 } else {
   ddd = file.path(resboot,paste0(ssp,"-",.rcp))
   dir.create(ddd, recursive = T, showWarnings = F)
-  savestring = paste0(project_val,"_",runid,dmg_ref,"_eta_",.eta,".RData")
+  savestring = paste0(ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,"_eta_",.eta,".RData")
   filename = file.path(ddd,paste0("store_scc_",savestring))
   save(store_scc_flat, file = filename)
   print(paste(filename,"saved"))
-  eq_filename = file.path(resdir,paste0("eq_store_scc_2020d",savestring))
-  eri_eq_filename = file.path(resdir,paste0("eri_eq_store_scc_2020d",savestring))
-  save(store_eq_wscc_flat, file = eq_filename)
-  print(paste(eq_filename,"saved"))
-  save(store_eri_eq_wscc_flat, file = eri_eq_filename)
-  print(paste(eri_eq_filename,"saved"))
 }
+eq_stat_wscc <-  rbindlist(lapply(store_eq_wscc_flat, compute_stat))
+eq_stat_wscc$ID <- names(store_eq_wscc_flat)
+eri_eq_stat_wscc <-  rbindlist(lapply(store_eri_eq_wscc_flat, compute_stat))
+eri_eq_stat_wscc$ID <- names(store_eri_eq_wscc_flat)
+eq_filename = file.path(resdir,paste0("eq_statscc_2020d",savestring))
+eri_eq_filename = file.path(resdir,paste0("eri_eq_statscc_2020d",savestring))
+save(eq_stat_wscc, file = eq_filename)
+print(paste(eq_filename,"saved"))
+save(eri_eq_stat_wscc, file = eri_eq_filename)
+print(paste(eri_eq_filename,"saved"))
+
+# Calculate the income level at which it is preferable to give to the poor than to avert 
+# CO2 at $10/ton. 
+poorpref_fn <- function(.wscc) {
+  mean_gdp_per_cap_world * (10/.wscc)^(1/.eta)
+}
+poor_prefer_10 <- as.data.frame(
+  sapply(subset(eq_stat_wscc, select=names(eq_stat_wscc)[names(eq_stat_wscc) != "ID"]),FUN=poorpref_fn)
+)
+poor_prefer_10$ID <- eq_stat_wscc$ID
+poor_prefer_10_filename = file.path(resdir,paste0("poor_pref_10dollars",savestring))
+save(poor_prefer_10, file = poor_prefer_10_filename)
+print(paste(poor_prefer_10_filename,"saved"))
+
 print(Sys.time() - t0)
 print("end")
