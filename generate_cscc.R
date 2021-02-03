@@ -26,7 +26,8 @@ options:
 #opts <- docopt(doc)
 
 # Some tests
-opts <- docopt(doc, "-s SSP5 -c rcp45 -w") # Default case
+#opts <- docopt(doc, "-s SSP3 -c rcp45 -w") # Default case
+opts <- docopt(doc, "-s all -c rcp85 -f djo")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -w -d -f djo")
@@ -34,10 +35,10 @@ opts <- docopt(doc, "-s SSP5 -c rcp45 -w") # Default case
 t0 <- Sys.time()
 
 # GLOBAL VARIABLES
-if (is.null(opts[["s"]])) {
-  ssp = sample(paste0("SSP",1:5),1) # SSP{1,2,3,4,5}
+if (opts[["s"]] == "all") {
+  ssps = c(paste0("SSP",1:5)) # SSP{1,2,3,4,5}
 } else {
-  ssp = as.character(opts["s"])
+  ssps = as.character(opts["s"])
 }
 if (is.null(opts[["c"]])) {
   .rcp = sample(c("rcp45","rcp60","rcp85"),1)
@@ -82,7 +83,7 @@ lag5 = opts[['a']]
 save_raw_data = opts[['w']]
 very_last_year = 2200
 impulse_year = 2020
-preffdir = "res"
+preffdir = "results/res"
 pulse_scale = 1e6 # Gt=1e9 Mt=1e6 kt=1e3 t=1 
 reftemplastyear = F
 
@@ -94,6 +95,23 @@ if (dmg_ref == "djo") {
   reftemplastyear = T
 }
 
+resdir = paste0(preffdir,"_stat",dmg_ref)
+if (!out_of_sample) {resdir = paste0(resdir,"_30C")}
+if (rich_poor) {resdir = paste0(resdir,"_richpoor")}
+if (lag5) {resdir = paste0(resdir,"_lr")}
+
+resboot = paste0(preffdir,"_boot")
+if (!out_of_sample) {resboot = paste0(resboot,"_30C")}
+if (rich_poor) {resboot = paste0(resboot,"_richpoor")}
+if (lag5) {resboot = paste0(resboot,"_lr")}
+
+if (dmg_ref == "bhm") {
+  dmg_ref = ""
+}else{
+  dmg_ref = paste0("_",dmg_ref)
+}
+
+for (ssp in ssps){
 # Print simulation paramters
 print(paste("SSP: ",ssp))
 print(paste("RCP: ",.rcp))
@@ -107,22 +125,6 @@ print(paste("out_of_sample: ",out_of_sample))
 print(paste("richpoor: ",rich_poor))
 print(paste("LR (lag5): ", lag5))
 print(paste("damage function:",dmg_ref))
-
-if (dmg_ref == "bhm") {
-  dmg_ref = ""
-}else{
-  dmg_ref = paste0("_",dmg_ref)
-}
-
-resdir = paste0(preffdir,"_stat",dmg_ref)
-if (!out_of_sample) {resdir = paste0(resdir,"_30C")}
-if (rich_poor) {resdir = paste0(resdir,"_richpoor")}
-if (lag5) {resdir = paste0(resdir,"_lr")}
-
-resboot = paste0(preffdir,"_boot")
-if (!out_of_sample) {resboot = paste0(resboot,"_30C")}
-if (rich_poor) {resboot = paste0(resboot,"_richpoor")}
-if (lag5) {resboot = paste0(resboot,"_lr")}
 
 if (dmg_func == "bootstrap" & clim == "ensemble") {
   ddd = file.path(resboot,paste0(ssp,"-",.rcp))
@@ -370,8 +372,8 @@ for (nid in runid) {
   # elasticity of marginal utility of consumption = 1
   # based on Table 3.2 in IPCC AR5 WG2 Chapter 3
   # added 3% prtp to be compatible with EPA
-  prtps = c(2) # %
-  etas = c(1) 
+  prtps = c(0, 1, 2) # %
+  etas = c(2) 
   if(any(size(etas) > 1)) {
     stop("Global equality weighting breaks down with multiple values of eta")
   }
@@ -483,7 +485,7 @@ if (dmg_func == "estimates" | clim == "mean") {
 } else {
   ddd = file.path(resboot,paste0(ssp,"-",.rcp))
   dir.create(ddd, recursive = T, showWarnings = F)
-  savestring = paste0(ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim,dmg_ref,"_eta_",.eta,".RData")
+  savestring = paste0(ssp,"_",.rcp,"_",project_val,"_",dmg_func,"_clim",clim, dmg_ref,"_eta_",.eta,".RData")
   filename = file.path(ddd,paste0("store_scc_",savestring))
   save(store_scc_flat, file = filename)
   print(paste(filename,"saved"))
@@ -513,4 +515,5 @@ save(poor_prefer_10, file = poor_prefer_10_filename)
 print(paste(poor_prefer_10_filename,"saved"))
 
 print(Sys.time() - t0)
+}
 print("end")
