@@ -26,8 +26,8 @@ options:
 #opts <- docopt(doc)
 
 # Some tests
-#opts <- docopt(doc, "-s SSP3 -c rcp45 -w") # Default case
-opts <- docopt(doc, "-s all -c rcp85 -f djo")
+opts <- docopt(doc, "-s SSP3 -c rcp85 -w -f djo") # Default case
+#opts <- docopt(doc, "-s all -c all -f djo")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -w -d -f djo")
@@ -38,12 +38,12 @@ t0 <- Sys.time()
 if (opts[["s"]] == "all") {
   ssps = c(paste0("SSP",1:5)) # SSP{1,2,3,4,5}
 } else {
-  ssps = as.character(opts["s"])
+  ssps = c(as.character(opts["s"]))
 }
-if (is.null(opts[["c"]])) {
-  .rcp = sample(c("rcp45","rcp60","rcp85"),1)
+if (opts[["c"]] == "all") {
+  rcps = c("rcp45","rcp60","rcp85")
 } else {
-  .rcp = as.character(opts["c"]) 
+  rcps = as.character(opts["c"]) 
 }
 if (is.null(opts[["r"]])) {
   dmg_func = "estimates" # dmg function
@@ -111,6 +111,7 @@ if (dmg_ref == "bhm") {
   dmg_ref = paste0("_",dmg_ref)
 }
 
+for (.rcp in rcps){
 for (ssp in ssps){
 # Print simulation paramters
 print(paste("SSP: ",ssp))
@@ -372,8 +373,8 @@ for (nid in runid) {
   # elasticity of marginal utility of consumption = 1
   # based on Table 3.2 in IPCC AR5 WG2 Chapter 3
   # added 3% prtp to be compatible with EPA
-  prtps = c(0, 1, 2) # %
-  etas = c(2) 
+  prtps = c(0, 1, 2, 3) # %
+  etas = c(1) 
   if(any(size(etas) > 1)) {
     stop("Global equality weighting breaks down with multiple values of eta")
   }
@@ -515,5 +516,6 @@ save(poor_prefer_10, file = poor_prefer_10_filename)
 print(paste(poor_prefer_10_filename,"saved"))
 
 print(Sys.time() - t0)
+}
 }
 print("end")
