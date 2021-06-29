@@ -22,7 +22,7 @@ options:
 
 #my_opts <- docopt(my_doc, "-e 1 -v v4 -s poor_pref_10dollars -r 6.0,4.5,8.5 -f bhm") # Default case
 #my_opts <- docopt(my_doc, "-e 1,2 -v v2 -s eri_eq_statscc_2020d -r 8.5 -f bhm,djo") 
-my_opts <- docopt(my_doc, "-s eri_eq_statscc_2020d -f bhm,djo") 
+my_opts <- docopt(my_doc, "-e 1, -s eri_eq_statscc_2020d -r 8.5 -f djo") 
 #my_opts <- docopt(my_doc)
 
 # unpack variables from the options
@@ -112,7 +112,8 @@ columns_to_save = c("mean")
 origin = getwd()
 compare_results = results_table
 for (file in filelist) {
-  load(paste0(origin, file))
+  #load(paste0(origin, file))
+  load("results/res_statdjo_richpoor/Test_raw_scc_SSP3_rcp85_constant_estimates_climensemble_djo.RData")
   sspnum = as.numeric(substr(strsplit(file, split = "SSP")[[1]][2], 1, 1))
   rcpnum = substr(strsplit(file, split = "rcp")[[1]][2], 1, 2)
   rcpnum = sub("(.{1})(.*)", "\\1.\\2", rcpnum)
@@ -187,6 +188,12 @@ if (type_str != "eri_eq_statscc_2020d"){
 }
 
 plot
+
+subDir = "plotss"
+if (!dir.exists(file.path(subDir))){
+  dir.create(file.path(subDir))
+}
+
 savefig = paste0(type_str, version_string, ".png")
 ggsave(path="plots", filename=savefig)
 
@@ -203,4 +210,3 @@ if (type_str == "eri_eq_statscc_2020d"){
   savediffig = paste0(type_str, "InequalityAlteration", version_string, ".png")
   ggsave(path="plots", filename=savediffig)
 }
-

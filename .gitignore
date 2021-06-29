@@ -12,3 +12,7 @@
 # Output dirs
 res*/
 .Rproj.user
+
+# Output plots
+plots/
+.Rproj.user
