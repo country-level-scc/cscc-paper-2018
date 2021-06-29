@@ -189,7 +189,7 @@ if (type_str != "eri_eq_statscc_2020d"){
 
 plot
 
-subDir = "plotss"
+subDir = "plots"
 if (!dir.exists(file.path(subDir))){
   dir.create(file.path(subDir))
 }
