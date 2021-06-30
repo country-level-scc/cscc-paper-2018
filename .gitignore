@@ -16,3 +16,5 @@ res*/
 # Output plots
 plots/
 .Rproj.user
+
+/data/cmip5/RegionalSCC-rcpfits_Test

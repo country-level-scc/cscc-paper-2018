@@ -1,0 +1,47 @@
+library(countrycode)
+library(foreach)
+library(stringr)
+library(data.table)
+library(dplyr)
+
+# Load popweighted country temperatureincrease
+files = Sys.glob(file.path("data","cmip5","RegionalSCC_rcpfits","pop*.csv"))
+
+# load basetemp to set all temperatures in the files equal to to test for no T increase
+basetemp <- fread(file.path("data","cmip5","popweightcountry_1980_2010_obsbaseline.csv"), header = F, skip = 0)
+names(basetemp)[2] <- "Country"
+names(basetemp)[3] <- "temp"
+basetemp[Country=="Sudan",temp:=basetemp[Country=="Chad",temp]]
+basetemp[Country=="Serbia",temp:=basetemp[Country=="Bosnia and Herzegovina",temp]]
+basetemp[Country=="Western Sahara",temp:=basetemp[Country=="Mauritania",temp]]
+basetemp[Country=="Mongolia",temp:=ctemp[ISO3=="MNG" & year==2006,.(quantile(temp,prob=0.125))]$V1] # Missing Mongolia in basetemp dataset
+basetemp = basetemp[!is.na(temp)]
+basetemp.list <- as.list(as.data.frame(t(basetemp)))
+print(basetemp.list)
+
+# check if directory to store files in does exist already, otherwise make a new one
+subDir = "data/cmip5/RegionalSCC_rcpfits_Test"
+if (!dir.exists(file.path(subDir))){
+  dir.create(file.path(subDir))
+}
+
+for (f in files) {
+  # Load sample temp from one model [temperatures have to be adjusted to baseline]
+  temperature_data <- fread(f)
+  # save RCP for more sensible name in Test file
+  name_rcp =  substr(f, start = 57, stop = nchar(f)-4)
+  for (k in 1:nrow(temperature_data)){ # k is the row in the dataframe
+    country <- temperature_data[[2]][k] 
+    for (i in 1:length(basetemp.list)){
+      country_and_temp = basetemp.list[[i]]
+      if (country == country_and_temp[2]){
+        base_T <- country_and_temp[3]
+        for (j in 3:ncol(temperature_data)){
+          temperature_data[[j]][k] <- base_T
+        }
+      }
+    }
+  }
+  write.table(temperature_data, file = file.path("data","cmip5","RegionalSCC_rcpfits_Test",
+                                        paste0("popweightcountry", "_fromfit", "_", name_rcp,".csv")), col.names = FALSE,row.names=FALSE, sep =",")
+}
