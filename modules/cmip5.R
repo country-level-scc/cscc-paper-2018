@@ -5,21 +5,22 @@ library(foreach)
 library(stringr)
 
 # if doing a test:
-if ((Test== TRUE) & !dir.exists("data/cmip5/RegionalSCC_rcpfits_Test")){
+if ((Test == TRUE) & !dir.exists("data/cmip5/RegionalSCC_rcpfits_Test")){
   source("modules/generate_test_input.R")
 }
 
 if (Test == TRUE){
-  # Load for the test files
+  # Load popweighted country with baseline temperature for the test files
   files = Sys.glob(file.path("data","cmip5","RegionalSCC_rcpfits_Test","pop*.csv"))
-}  else{
-  # Load popweighted country temperatureincrease
-  #files = Sys.glob(file.path("data","cmip5","RegionalSCC_rcpfits","pop*.csv"))
+} else{
+  #Load popweighted country temperature increase
+  files = Sys.glob(file.path("data","cmip5","RegionalSCC_rcpfits","pop*.csv"))
 }
 
 all_ctemp = list()
 
 for (f in files) {
+  
   # Load sample temp from one model [temperatures have to be adjusted to baseline]
   temp = fread(input = f, header = F, skip = 0)
   # remove bad lines in RCP45
@@ -45,7 +46,7 @@ for (f in files) {
     .temp$Country="Sudan"
     ctemp = rbind(ctemp,.temp)
   }
-
+  
   # Check Serbia
   if(nrow(ctemp[Country=="Serbia"])==0){
     .temp = ctemp[Country=="Bosnia and Herzegovina"]
@@ -61,9 +62,8 @@ for (f in files) {
   }
   
   all_ctemp = c(all_ctemp,list(ctemp))
-  ctemp 
+  ctemp
 }
-
 all_ctemp = rbindlist(all_ctemp)
 rm(temp,ctemp)
 
@@ -79,6 +79,7 @@ setkey(ctemp,rcp,ISO3,year)
 
 # Expected temperature
 etemp = ctemp[,.(temp=mean(temp)),by=c("rcp","ISO3","year")]
+
 
 # BASELINE TEMPERATURE (annual average popweighted temperature observed 1980-2010)
 

@@ -79,7 +79,7 @@ namefun_nocut <- function(x, y, z, timeframe){
 
 filelist=c()
 
-if (length(grep( "djo", dmg_f))!=0){
+if ("djo" %in% dmg_f){
   for (y in variable_rcp){
     for (z in variable_risk){
       filelist2 = lapply(c(1:5), namefun_altdamage, y=y, z=z)
@@ -88,7 +88,7 @@ if (length(grep( "djo", dmg_f))!=0){
   }
 }  
 
-if (length(grep("bhm", dmg_f))!=0){ 
+if ("bhm" %in% dmg_f){
   for (y in variable_rcp){
     for (z in variable_risk){
       for (timeframe in c("horizon2100", "constant")){
@@ -112,8 +112,7 @@ columns_to_save = c("mean")
 origin = getwd()
 compare_results = results_table
 for (file in filelist) {
-  #load(paste0(origin, file))
-  load("results/res_statdjo_richpoor/Test_raw_scc_SSP3_rcp85_constant_estimates_climensemble_djo.RData")
+  load(paste0(origin, file))
   sspnum = as.numeric(substr(strsplit(file, split = "SSP")[[1]][2], 1, 1))
   rcpnum = substr(strsplit(file, split = "rcp")[[1]][2], 1, 2)
   rcpnum = sub("(.{1})(.*)", "\\1.\\2", rcpnum)
