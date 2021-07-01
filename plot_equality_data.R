@@ -22,7 +22,7 @@ options:
 
 #my_opts <- docopt(my_doc, "-e 1 -v v4 -s poor_pref_10dollars -r 6.0,4.5,8.5 -f bhm") # Default case
 #my_opts <- docopt(my_doc, "-e 1,2 -v v2 -s eri_eq_statscc_2020d -r 8.5 -f bhm,djo") 
-my_opts <- docopt(my_doc, "-e 1, -s eri_eq_statscc_2020d -r 8.5 -f djo") 
+my_opts <- docopt(my_doc, "-e 1, -s eri_eq_statscc_2020d -r 8.5 -f bhm,djo") 
 #my_opts <- docopt(my_doc)
 
 # unpack variables from the options
@@ -79,7 +79,7 @@ namefun_nocut <- function(x, y, z, timeframe){
 
 filelist=c()
 
-if ("djo" %in% dmg_f){
+if (grepl("djo", dmg_f)){
   for (y in variable_rcp){
     for (z in variable_risk){
       filelist2 = lapply(c(1:5), namefun_altdamage, y=y, z=z)
@@ -88,7 +88,7 @@ if ("djo" %in% dmg_f){
   }
 }  
 
-if ("bhm" %in% dmg_f){
+if (grepl("bhm", dmg_f)){
   for (y in variable_rcp){
     for (z in variable_risk){
       for (timeframe in c("horizon2100", "constant")){
