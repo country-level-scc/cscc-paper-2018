@@ -8,7 +8,7 @@
 library(data.table)
 library(docopt)
 
-'usage: generate_cscc.R -s <ssp> -c <rcp> [ -r <runid> -p <type> -l <clim> -f <name>] [-a] [-o] [-d] [-w]
+'usage: generate_cscc.R -s <ssp> -c <rcp> [ -r <runid> -p <type> -l <clim> -f <name>] [-a] [-o] [-d] [-t] [-w]
 
 options:
  -s <ssp>   SSP baseline (random(default), SSP1, SSP2,..., SSP5)
@@ -20,13 +20,14 @@ options:
  -d         rich/poor damage function specification (default, pooled)
  -a         5-lag damage function specification (default, 0-lag)
  -f <name>  damage function (default=bhm (Burke et al.), djo (Dell et al.))
+ -t         allows for generating tests with different temperature inputs
  -w         save raw data' -> doc
 
 
 #opts <- docopt(doc)
 
 # Some tests
-opts <- docopt(doc, "-s SSP3 -c rcp85 -w -f djo") # Default case
+opts <- docopt(doc, "-s SSP4 -c rcp60 -w -t -f bhm") # Default case
 #opts <- docopt(doc, "-s all -c all -f djo")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
@@ -80,6 +81,7 @@ if (is.null(opts[["f"]])) {
 out_of_sample = !opts[['o']]
 rich_poor = opts[['d']]
 lag5 = opts[['a']]
+test = opts[['t']]
 save_raw_data = opts[['w']]
 very_last_year = 2200
 impulse_year = 2020

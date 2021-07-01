@@ -5,11 +5,11 @@ library(foreach)
 library(stringr)
 
 # if doing a test:
-if ((Test == TRUE) & !dir.exists("data/cmip5/RegionalSCC_rcpfits_Test")){
+if ((test == TRUE) & !dir.exists("data/cmip5/RegionalSCC_rcpfits_Test")){
   source("modules/generate_test_input.R")
 }
 
-if (Test == TRUE){
+if (test == TRUE){
   # Load popweighted country with baseline temperature for the test files
   files = Sys.glob(file.path("data","cmip5","RegionalSCC_rcpfits_Test","pop*.csv"))
 } else{
@@ -79,7 +79,6 @@ setkey(ctemp,rcp,ISO3,year)
 
 # Expected temperature
 etemp = ctemp[,.(temp=mean(temp)),by=c("rcp","ISO3","year")]
-
 
 # BASELINE TEMPERATURE (annual average popweighted temperature observed 1980-2010)
 

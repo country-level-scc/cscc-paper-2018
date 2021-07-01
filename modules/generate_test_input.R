@@ -36,6 +36,7 @@ for (f in files) {
     if (length(country_in_list) != 0){
       number_country_in_list = (country_in_list)[[1]]
       base_T <- basetemp.list[[number_country_in_list]][3]
+      base_T <- as.numeric(base_T)
       for (k in 3:ncol(temperature_data)){
         temperature_data[[k]][i] <- base_T
       }

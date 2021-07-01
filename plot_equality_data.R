@@ -22,7 +22,7 @@ options:
 
 #my_opts <- docopt(my_doc, "-e 1 -v v4 -s poor_pref_10dollars -r 6.0,4.5,8.5 -f bhm") # Default case
 #my_opts <- docopt(my_doc, "-e 1,2 -v v2 -s eri_eq_statscc_2020d -r 8.5 -f bhm,djo") 
-my_opts <- docopt(my_doc, "-e 1, -s eri_eq_statscc_2020d -r 8.5 -f bhm,djo") 
+my_opts <- docopt(my_doc, "-e 1, -s eri_eq_statscc_2020d -r 6.0 -f bhm") 
 #my_opts <- docopt(my_doc)
 
 # unpack variables from the options
@@ -209,3 +209,4 @@ if (type_str == "eri_eq_statscc_2020d"){
   savediffig = paste0(type_str, "InequalityAlteration", version_string, ".png")
   ggsave(path="plots", filename=savediffig)
 }
+
