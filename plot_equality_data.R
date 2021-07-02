@@ -11,18 +11,21 @@ library(data.table)
 
 ' Input values to be plotted. Use values also used to generate files in the generate_cscc.r results folder
 
-usage: plot_equality_data.R [-e <eta> -v <ver> -s <string> -r <rcp> -f <dmg>]
+usage: plot_equality_data.R [-e <eta> -v <ver> -t <type> -r <rcp> -s <ssp> -p <pro> -c <true> -f <dmg>]
 
 options:
  -e Eta value used in the model (1, 2 or 1:2 (default))
  -v Version number to name the plotted figure
- -s Type of string and plot (either poor_pref_10dollars (default) or eri_eq_statscc_2020d)
+ -t Type of string and plot (either poor_pref_10dollars (default) or eri_eq_statscc_2020d)
  -r Plot rcp scenario (4.5, 6.0, 8.5 or all (default))
+ -s SSP baseline (all(default), 1, 2,..., 5. ))
+ -p Projection type. (constant (default), horizon2100, all)
+ -c Check in order to do a test
  -f Damage function (default=bhm (Burke et al.), djo (Dell et al.). separate by columns)' -> my_doc
 
-#my_opts <- docopt(my_doc, "-e 1 -v v4 -s poor_pref_10dollars -r 6.0,4.5,8.5 -f bhm") # Default case
-#my_opts <- docopt(my_doc, "-e 1,2 -v v2 -s eri_eq_statscc_2020d -r 8.5 -f bhm,djo") 
-my_opts <- docopt(my_doc, "-e 1, -s eri_eq_statscc_2020d -r 6.0 -f bhm") 
+#my_opts <- docopt(my_doc, "-e 1 -v v4 -t poor_pref_10dollars -r 6.0,4.5,8.5 -f bhm") # Default case
+#my_opts <- docopt(my_doc, "-e 1,2 -v v2 -t eri_eq_statscc_2020d -r 8.5 -f bhm,djo") 
+my_opts <- docopt(my_doc, "-e 2 -t poor_pref_10dollars -r 6.0 -s 4 -c true -f bhm") 
 #my_opts <- docopt(my_doc)
 
 # unpack variables from the options
@@ -39,12 +42,13 @@ if (is.null(my_opts[["v"]])) {
 } else{ version_string = as.character(my_opts[["v"]])
 }
 
-if (is.null(my_opts[["s"]])){
+if (is.null(my_opts[["t"]])){
   type_str = "poor_pref_10dollars" #default
-} else{type_str = as.character(my_opts[["s"]])}  
+} else{type_str = as.character(my_opts[["t"]])}  
 
 variable_rcp = c()
 if (length(grep(4.5, my_opts[["r"]]) != 0)){
+#if (grepl(4.5, my_opts[["r"]])){
   variable_rcp <- append(variable_rcp, 45)
 } 
 if (length(grep(6.0, my_opts[["r"]]) != 0)){
@@ -55,6 +59,20 @@ if (length(grep(8.5, my_opts[["r"]])) != 0){
 } 
 if (length(variable_rcp) == 0){variable_rcp = c(45,60,85)}
 
+if (my_opts[["s"]] == "all") {
+  ssp_plot = c(1:5) # SSP{1,2,3,4,5
+} else {ssp_plot = c(as.character(my_opts[["s"]]))}
+
+if (is.null(my_opts[["p"]]) || (my_opts[["p"]]== "all") ){
+  variable_timeframe = c("constant")
+} else if (my_opts[["p"]]== "horizon2100"){
+  variable_timeframe = c("horizon2100")
+} else {variable_timeframe = c("constant", "horizon2100")}  
+  
+if (!is.null(my_opts)){
+  test = TRUE
+}
+
 if (is.null(my_opts[["f"]])) {
   dmg_f = "bhm"     # bhm is default damage function
 } else {
@@ -64,16 +82,20 @@ if (is.null(my_opts[["f"]])) {
 # Conversion factor
 dollar_val_2020 = 1.35
 
+if (test == TRUE){
+  results_dir = "/results_test"
+} else {results_dir = "/results"}
+  
 namefun <- function(x, y, z, timeframe){
-  paste0("/results/res_statbhm_30C/", type_str, "SSP", x, "_rcp", y, 
+  paste0(results_dir, "/res_statbhm_30C/", type_str, "SSP", x, "_rcp", y, 
          "_", timeframe, "_estimates_climensemble_", "eta_", z, ".RData") 
 }
 namefun_altdamage <- function(x, y, z){
-  paste0("/results/res_statdjo_richpoor/", type_str, "SSP", x, "_rcp", y,
+    paste0(results_dir, "/res_statdjo_richpoor/", type_str, "SSP", x, "_rcp", y,
          "_constant_estimates_climensemble_djo_", "eta_", z, ".RData")
 }
 namefun_nocut <- function(x, y, z, timeframe){
-  paste0("/results/res_statbhm/", type_str, "SSP", x, "_rcp", y, 
+  paste0(results_dir, "/res_statbhm/", type_str, "SSP", x, "_rcp", y, 
          "_", timeframe, "_estimates_climensemble_", "eta_", z, ".RData") 
 }
 
@@ -82,25 +104,27 @@ filelist=c()
 if (grepl("djo", dmg_f)){
   for (y in variable_rcp){
     for (z in variable_risk){
-      filelist2 = lapply(c(1:5), namefun_altdamage, y=y, z=z)
+      filelist2 = lapply(ssp_plot, namefun_altdamage, y=y, z=z)
       filelist=c(filelist, filelist2)
     }
   }
 }  
 
 if (grepl("bhm", dmg_f)){
-  for (y in variable_rcp){
-    for (z in variable_risk){
-      for (timeframe in c("horizon2100", "constant")){
-        filelist2 = lapply(c(1:5), namefun, y=y, z=z, timeframe=timeframe) 
-        filelist=c(filelist, filelist2)
+  if (dir.exists("/results_test/res_statbhm_30C")){
+    for (y in variable_rcp){
+      for (z in variable_risk){
+        for (timeframe in variable_timeframe){
+          filelist2 = lapply(ssp_plot, namefun, y=y, z=z, timeframe=timeframe) 
+          filelist=c(filelist, filelist2)
+        }
       }
     }
-  }
+  } 
   for (y in variable_rcp){
     for (z in variable_risk){
-      for (timeframe in c("horizon2100", "constant")){
-        filelist2 = lapply(c(1:5), namefun_nocut, y=y, z=z, timeframe=timeframe) 
+      for (timeframe in variable_timeframe){
+        filelist2 = lapply(ssp_plot, namefun_nocut, y=y, z=z, timeframe=timeframe) 
         filelist=c(filelist, filelist2)
       }
     }

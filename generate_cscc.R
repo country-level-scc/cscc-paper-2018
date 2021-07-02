@@ -8,7 +8,7 @@
 library(data.table)
 library(docopt)
 
-'usage: generate_cscc.R -s <ssp> -c <rcp> [ -r <runid> -p <type> -l <clim> -f <name>] [-a] [-o] [-d] [-t] [-w]
+'usage: generate_cscc.R -s <ssp> -c <rcp> [ -r <runid> -p <type> -l <clim> -e <eta> -f <name>] [-a] [-o] [-d] [-t] [-w]
 
 options:
  -s <ssp>   SSP baseline (random(default), SSP1, SSP2,..., SSP5)
@@ -16,6 +16,7 @@ options:
  -r <runid> Bootstart run for the damage function parameter, 0 is estimates (0<=id<=1000)
  -p <type>  projection type (constant (default),horizon2100)
  -l <clim>  climate models (ensemble (default), mean[-ensemble])
+ -e         elasticity of marginal utility of consumption. eta is 1 (default) or 2
  -o         does not allow for out-of-sample damage prediction (default, allows)
  -d         rich/poor damage function specification (default, pooled)
  -a         5-lag damage function specification (default, 0-lag)
@@ -27,7 +28,7 @@ options:
 #opts <- docopt(doc)
 
 # Some tests
-opts <- docopt(doc, "-s SSP4 -c rcp60 -w -t -f bhm") # Default case
+opts <- docopt(doc, "-s SSP4 -c rcp60 -w -t -e 1 -f bhm") # Default case
 #opts <- docopt(doc, "-s all -c all -f djo")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
@@ -72,6 +73,10 @@ if (is.null(opts[["l"]])) {
     runid = 1:1000
   }
 }
+if (is.null(opts[["e"]]) || opts[["e"]] == "1"){
+  etas = c(1)
+} else {etas = c(2)}
+
 if (is.null(opts[["f"]])) {
   dmg_ref = "bhm"
 } else {
@@ -85,7 +90,9 @@ test = opts[['t']]
 save_raw_data = opts[['w']]
 very_last_year = 2200
 impulse_year = 2020
-preffdir = "results/res"
+if (test == TRUE){
+  preffdir = "results_test/res"
+} else {preffdir = "results/res"}
 pulse_scale = 1e6 # Gt=1e9 Mt=1e6 kt=1e3 t=1 
 reftemplastyear = F
 
@@ -317,8 +324,8 @@ for (nid in runid) {
   res_scc[, gdprate_cc_avg := ifelse(year == impulse_year,
                                      gdprate_cc,
                                      (gdpcap_cc/gdpcap_cc_impulse_year)^(1/(year - impulse_year)) - 1)]
-
-  #World
+  View(res_scc)
+  #Worlres_scc#World
   gdprate_cc_impulse_year = res_wscc[year == impulse_year,
                                      .(gdpcap_cc_impulse_year = gdpcap_cc),
                                      by = c("model_id")]
@@ -344,6 +351,7 @@ for (nid in runid) {
   res_wscc = merge(res_wscc,sum_res_scc,
                    by = c("year",c("model_id")))
   
+  
   # Extrapolation SCC (before discounting)
   extrapolate_scc <- function(SD){
     if (project_val == "horizon2100") {
@@ -361,13 +369,14 @@ for (nid in runid) {
     }
     return(list(year = 2101:very_last_year, scc = .scc, gdprate_cc_avg = .gdprate_cc_avg))
   }
-  
+  View(res_wscc)
   # combine if necessary
   if (project_val != "horizon2100") {
     res_scc_future <- res_scc[,extrapolate_scc(.SD),by = c("ISO3",c("model_id"))]
     res_wscc_future <- res_wscc[,extrapolate_scc(.SD),by = c("model_id")]
     res_scc <- rbindlist(list(res_scc,res_scc_future),fill = T)
     res_wscc <- rbindlist(list(res_wscc,res_wscc_future),fill = T)
+    View(res_wscc)
   }
   print(Sys.time() - t0)
   
@@ -376,11 +385,10 @@ for (nid in runid) {
   # based on Table 3.2 in IPCC AR5 WG2 Chapter 3
   # added 3% prtp to be compatible with EPA
   prtps = c(0, 1, 2, 3) # %
-  etas = c(1) 
   if(any(size(etas) > 1)) {
     stop("Global equality weighting breaks down with multiple values of eta")
   }
-  
+
   cscc = NULL
   for (.prtp in prtps) {
     for (.eta in etas) {
@@ -393,7 +401,6 @@ for (nid in runid) {
   }
   wscc = cscc[,list(scc = sum(scc)),by = c("prtp","eta","model_id")]
   
-  
   # Also calculate the world social cost of carbon under equality conditions
   mean_gdp_per_cap_world = weighted.mean(
     gdpcap[year == impulse_year & SSP==ssp]$gdpcap, 
@@ -405,7 +412,6 @@ for (nid in runid) {
   # The Somalian data is bad so we remove it entirely
   eq_cscc <- eq_cscc[ISO3 != "SOM",]
   eq_wscc = eq_cscc[,list(scc = sum(scc * weight)), by = c("prtp","eta","model_id")]
-  
   # Comparison EPA (SC-CO2) [[http://www3.epa.gov/climatechange/EPAactivities/economics/scc.html]]
   drs = c(2.5,3,5) #%
   cscc0 = NULL
@@ -521,3 +527,4 @@ print(Sys.time() - t0)
 }
 }
 print("end")
+
