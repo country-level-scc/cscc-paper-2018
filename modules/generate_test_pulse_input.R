@@ -16,7 +16,7 @@ for (f in files) {
   start_model = as.data.frame(str_locate_all(pattern="fromfit_", f)) # start specific name at the variable for model where fromfit_ ends
   name_model =  substr(f, start = start_model[[2]][1]+1, stop = nchar(f)-4)
   for (i in 1:nrow(pulse_data)){
-    for (k in 3:ncol(pulse_data)){
+    for (k in 4:ncol(pulse_data)){
       pulse_data[[k]][i] <- as.numeric(0)
     }
   }

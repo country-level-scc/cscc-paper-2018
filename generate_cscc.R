@@ -27,7 +27,7 @@ options:
 #opts <- docopt(doc)
 
 # Some tests
-opts <- docopt(doc, "-s SSP4 -c rcp60 -w -t -e 1 -f bhm") # Default case
+opts <- docopt(doc, "-s SSP4 -c rcp60 -w -e 1 -t -f bhm") # Default case
 #opts <- docopt(doc, "-s all -c all -f djo")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
@@ -249,6 +249,8 @@ for (.rcp in rcps){
         .gdpcap_tm1_imp <- .gdpcap_imp[i]
         if (reftemplastyear) {.ref_temp <- SD$temp[i]}
       }
+      #print(.gdpcap_cc)
+      #print(.gdpcap_imp)
       return(list(year = fyears, 
                   gdpcap = .gdpcap,
                   gdpcap_cc = .gdpcap_cc,
@@ -286,6 +288,7 @@ for (.rcp in rcps){
       }
       miss_val_iso3 <- unique(ssp_gdpr[year == impulse_year & is.na(gdpcap),ISO3])
       ssp_gdpr <- ssp_gdpr[!ISO3 %in% miss_val_iso3]
+
       
       if (clim == "ensemble") {
         # keep only model combination
@@ -295,13 +298,10 @@ for (.rcp in rcps){
       } else {
         ssp_gdpr <- ssp_gdpr[,.(model_id = nid,ISO3,year,temp,temp_pulse,basetemp,gdpr,gdpcap)]
       }
-      if (test == TRUE){
-        ssp_gdpr[,temp_pulse := temp]
-      } else {ssp_gdpr[,temp_pulse := temp + temp_pulse * 1e-3 / 44 * 12 * (pulse_scale * 1e-9)]}
-      
+      ssp_gdpr[,temp_pulse := temp + temp_pulse * 1e-3 / 44 * 12 * (pulse_scale * 1e-9)]
       setkey(ssp_gdpr,model_id,ISO3)
       print(Sys.time() - t0)
-      
+
       res_scc <- ssp_gdpr[,project_gdpcap(.SD),by = c("model_id","ISO3")]
       print(Sys.time() - t0)
       
@@ -325,7 +325,7 @@ for (.rcp in rcps){
       res_scc[, gdprate_cc_avg := ifelse(year == impulse_year,
                                          gdprate_cc,
                                          (gdpcap_cc/gdpcap_cc_impulse_year)^(1/(year - impulse_year)) - 1)]
-
+      
       #Worlres_scc#World
       gdprate_cc_impulse_year = res_wscc[year == impulse_year,
                                          .(gdpcap_cc_impulse_year = gdpcap_cc),
@@ -369,14 +369,13 @@ for (.rcp in rcps){
         }
         return(list(year = 2101:very_last_year, scc = .scc, gdprate_cc_avg = .gdprate_cc_avg))
       }
-
+      View(res_wscc)
       # combine if necessary
       if (project_val != "horizon2100") {
         res_scc_future <- res_scc[,extrapolate_scc(.SD),by = c("ISO3",c("model_id"))]
         res_wscc_future <- res_wscc[,extrapolate_scc(.SD),by = c("model_id")]
         res_scc <- rbindlist(list(res_scc,res_scc_future),fill = T)
         res_wscc <- rbindlist(list(res_wscc,res_wscc_future),fill = T)
-        View(res_wscc)
       }
       print(Sys.time() - t0)
       
@@ -400,7 +399,7 @@ for (.rcp in rcps){
         }
       }
       wscc = cscc[,list(scc = sum(scc)),by = c("prtp","eta","model_id")]
-      
+
       # Also calculate the world social cost of carbon under equality conditions
       mean_gdp_per_cap_world = weighted.mean(
         gdpcap[year == impulse_year & SSP==ssp]$gdpcap, 
