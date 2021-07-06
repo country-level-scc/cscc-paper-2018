@@ -4,8 +4,15 @@ library(countrycode)
 library(foreach)
 library(stringr)
 
-files <- Sys.glob("data/pulse/RegionalSCC_pulseuncertainty/*.csv")
+# if doing a test:
+if ((test == TRUE) & !dir.exists("data/pulse/RegionalSCC_pulseuncertainty_Test")){
+  source("modules/generate_test_pulse_input.R")
+}
 
+if (test == TRUE){
+  files <- Sys.glob("data/pulse/RegionalSCC_pulseuncertainty_Test/*.csv")
+} else {files <- Sys.glob("data/pulse/RegionalSCC_pulseuncertainty/*.csv")}  
+  
 all_pulse = foreach(f=files) %do% {
   
   # Load sample temp from one model [temperatures have to be adjusted to baseline]
@@ -60,4 +67,3 @@ cpulse = cpulse[,list(model,ccmodel,ISO3,mid_year,temp_pulse)]
 setkey(cpulse,ISO3,mid_year)
 
 epulse = cpulse[,list(temp_pulse=mean(temp_pulse)), by=c("mid_year","ISO3")]
-
