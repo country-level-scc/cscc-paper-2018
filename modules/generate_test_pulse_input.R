@@ -17,11 +17,14 @@ for (f in files) {
   name_model =  substr(f, start = start_model[[2]][1]+1, stop = nchar(f)-4)
   for (i in 1:nrow(pulse_data)){
     for (k in 4:ncol(pulse_data)){
-      pulse_data[[k]][i] <- as.numeric(0)
+      pulse_data[[k]][i] <- 0
     }
+    #if (pulse_data[[2]][i] == "Afghanistan"){
+     # temp_change <- 1
+      #pulse_data[[4]][i] <- temp_change
+    #}
   }
-
   write.table(pulse_data, file = file.path("data","pulse","RegionalSCC_pulseuncertainty_Test",
-                                                paste0("popweightcountry", "_fromfit", "_", name_model,".csv")),row.names=FALSE, sep =",")
+                                              paste0("popweightcountry", "_fromfit", "_", name_model,".csv")),row.names=FALSE, sep =",")
 }  
-  
+

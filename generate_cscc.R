@@ -340,7 +340,6 @@ for (.rcp in rcps){
                        by = "model_id")
       res_wscc[year == impulse_year,gdprate_cc_avg := gdprate_cc_avg_impulse_year]
       res_wscc[,gdprate_cc_avg_impulse_year := NULL]
-      
       print(Sys.time() - t0)
       
       # Compute SCC according to Anthoff and Tol equation A3 in Appendix
@@ -369,7 +368,7 @@ for (.rcp in rcps){
         }
         return(list(year = 2101:very_last_year, scc = .scc, gdprate_cc_avg = .gdprate_cc_avg))
       }
-      View(res_wscc)
+
       # combine if necessary
       if (project_val != "horizon2100") {
         res_scc_future <- res_scc[,extrapolate_scc(.SD),by = c("ISO3",c("model_id"))]
@@ -432,7 +431,7 @@ for (.rcp in rcps){
                           fill = T)
       
       print(Sys.time() - t0)
-      
+
       # ID to be used
       wscc[, ISO3 := "WLD"]
       eq_wscc[, ISO3 := "WLD"]
