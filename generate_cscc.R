@@ -27,7 +27,7 @@ options:
 #opts <- docopt(doc)
 
 # Some tests
-opts <- docopt(doc, "-s SSP4 -c rcp60 -w -e 1 -t -f bhm") # Default case
+opts <- docopt(doc, "-s SSP1 -c rcp45 -w -e 1 -t -f bhm") # Default case
 #opts <- docopt(doc, "-s all -c all -f djo")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
