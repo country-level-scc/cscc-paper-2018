@@ -19,9 +19,9 @@ for (f in files) {
     for (k in 4:ncol(pulse_data)){
       pulse_data[[k]][i] <- 0
     }
-    if (pulse_data[[2]][i] == "Afghanistan"){
+    if (pulse_data[[2]][i] == "Angola"){
       temp_change <- 1
-      pulse_data[[4]][i] <- temp_change
+      pulse_data[[5]][i] <- temp_change # change pulse to 1 for year 2021
     }
   }
   write.table(pulse_data, file = file.path("data","pulse","RegionalSCC_pulseuncertainty_Test",
