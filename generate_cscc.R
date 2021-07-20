@@ -15,7 +15,7 @@ options:
  -r <runid> Bootstart run for the damage function parameter, 0 is estimates (0<=id<=1000)
  -p <type>  projection type (constant (default),horizon2100)
  -l <clim>  climate models (ensemble (default), mean[-ensemble])
- -e         elasticity of marginal utility of consumption. eta is 1 (default) or 2
+ -e <eta>   elasticity of marginal utility of consumption. eta is 1 (default) or 2
  -o         does not allow for out-of-sample damage prediction (default, allows)
  -d         rich/poor damage function specification (default, pooled)
  -a         5-lag damage function specification (default, 0-lag)
@@ -27,7 +27,7 @@ options:
 #opts <- docopt(doc)
 
 # Some tests
-opts <- docopt(doc, "-s SSP1 -c rcp45 -w -e 1 -t -f bhm") # Default case
+opts <- docopt(doc, "-s SSP3 -c rcp85 -w -e 1 -f dice") # Default case
 #opts <- docopt(doc, "-s all -c all -f djo")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
@@ -58,6 +58,7 @@ if (is.null(opts[["r"]])) {
     dmg_func = paste0("bootstrap")
   }
 }
+
 if (is.null(opts[["p"]])) {
   project_val = "constant" # growth rate constant
 } else {
@@ -72,7 +73,10 @@ if (is.null(opts[["l"]])) {
     runid = 1:1000
   }
 }
-if (is.null(opts[["e"]]) || opts[["e"]] == "1"){
+
+if (is.null(opts[["e"]])){ # default RRA is 1 
+  etas = c(1)
+} else if (opts["e"] == 1){
   etas = c(1)
 } else {etas = c(2)}
 
@@ -121,7 +125,7 @@ if (dmg_ref == "bhm") {
 
 for (.rcp in rcps){
   for (ssp in ssps){
-    # Print simulation paramters
+    # Print simulation parameters
     print(paste("SSP: ",ssp))
     print(paste("RCP: ",.rcp))
     print(paste("dmg_func: ",dmg_func))
@@ -147,9 +151,11 @@ for (.rcp in rcps){
     source("modules/gdpssp.R")
     if (dmg_ref == "") {
       source("modules/bhm_replica.R")
+    } else if (dmg_ref == "_dice"){
+      source("modules/dice_replica.R")
     } else {
-      source("modules/djo_replica.R")
-    }
+      source("modules/djo_replica.R")}
+    
     source("modules/cmip5.R")
     source("modules/impulse_response.R")
     print(Sys.time() - t0)
@@ -249,12 +255,47 @@ for (.rcp in rcps){
         .gdpcap_tm1_imp <- .gdpcap_imp[i]
         if (reftemplastyear) {.ref_temp <- SD$temp[i]}
       }
-      #print(.gdpcap_cc)
-      #print(.gdpcap_imp)
       return(list(year = fyears, 
                   gdpcap = .gdpcap,
                   gdpcap_cc = .gdpcap_cc,
                   gdpcap_imp = .gdpcap_imp,
+                  gdprate_cc = .gdprate_cc
+      ))
+    }
+    
+    project_gdpcap_cc_dice <- function(SD){
+      .gdp <- SD$gdp
+      .gdprate_cc <- rep(NA, length(SD$gdp))
+      .delta_cc <- rep(NA,length(SD$gdp))
+      .delta_imp <- rep(NA,length(SD$gdp))
+      .gdp_damages_cc <- rep(NA,length(SD$gdp))
+      .gdp_netto_cc <- rep(NA,length(SD$gdp))
+      .gdp_damages_imp <- rep(NA,length(SD$gdp))
+      .gdp_netto_imp <- rep(NA,length(SD$gdp))
+      .gdp_base <- .gdp[1]
+      .gdprate_cc[1] <- SD$gdpr[1] 
+      .ref_temp <- SD$temp[1] # reftemp is basetemp for DICE
+      for (i in seq_along(c(fyears))){
+        .delta_cc[i] <- warming_effect(SD$temp[i], .ref_temp, .gdp_base, nid)
+        # damages for climate change
+        .gdp_damages_cc[i] <- (SD$gdp[i] * .delta_cc[i])
+        .gdp_netto_cc[i] <- (SD$gdp[i] * (1 - .delta_cc[i]))
+        # damages for impulse temp
+        .delta_imp[i] <- warming_effect(SD$temp_pulse[i], .ref_temp, .gdp_base, nid)
+        .gdp_damages_imp[i] <- (SD$gdp[i] * .delta_imp[i])
+        .gdp_netto_imp[i] <- (SD$gdp[i] * (1 - .delta_imp[i]))
+        .gdp_base <- .gdp[i]
+        # calculate gdprate_cc
+        if (i > 1){
+          .gdprate_cc[i] <- (.gdp_netto_cc[i] / .gdp_netto_cc[i-1]) -1
+        }
+      }
+      return(list(year = fyears,
+                  gdpcap = .gdp,
+                  gdpcap_cc = .gdp_netto_cc,
+                  gdpcap_imp = .gdp_netto_imp,
+                  gdp_damages_cc = .gdp_damages_cc,
+                  gdp_damages_imp = .gdp_damages_imp,
                   gdprate_cc = .gdprate_cc
       ))
     }
@@ -289,7 +330,6 @@ for (.rcp in rcps){
       miss_val_iso3 <- unique(ssp_gdpr[year == impulse_year & is.na(gdpcap),ISO3])
       ssp_gdpr <- ssp_gdpr[!ISO3 %in% miss_val_iso3]
 
-      
       if (clim == "ensemble") {
         # keep only model combination
         model_comb[,model_id := paste(model,ccmodel)]
@@ -302,19 +342,34 @@ for (.rcp in rcps){
       setkey(ssp_gdpr,model_id,ISO3)
       print(Sys.time() - t0)
 
-      res_scc <- ssp_gdpr[,project_gdpcap(.SD),by = c("model_id","ISO3")]
-      print(Sys.time() - t0)
-      
-      # yearly population 
-      popyear <- pop[SSP == ssp,approx(year,pop,fyears),by = c("SSP","ISO3")]
-      setnames(popyear,c("x","y"),c("year","pop"))
-      res_scc <- merge(res_scc,popyear,by = c("ISO3","year"))
-      print(Sys.time() - t0)
+      if (dmg_ref == "_dice"){
+        ssp_gdp<- gdp_yearly[SSP == ssp & year %in% fyears]
+        ssp_gdp <- merge(ssp_gdpr, ssp_gdp, by = c("year","ISO3"))
+        res_sccdice <- ssp_gdp[,project_gdpcap_cc_dice(.SD),by = c("model_id","ISO3")]
+        
+        # generating gdp cap by dividing through population
+        popyear <- pop[SSP == ssp,approx(year,pop,fyears), by = c("SSP","ISO3")]
+        colnames(popyear) <- c("SSP", "ISO3", "year", "pop")
+        gdpcap_yearly <- merge(popyear, res_sccdice, by = c("ISO3","year"))
+        gdpcap_yearly[, gdpcap := gdpcap/pop*1e3]
+        gdpcap_yearly[, gdp_damages_cc := gdp_damages_cc/pop*1e3]
+        gdpcap_yearly[, gdpcap_cc := gdpcap_cc/pop*1e3]
+        gdpcap_yearly[, gdp_damages_imp := gdp_damages_imp/pop*1e3]
+        gdpcap_yearly[, gdpcap_imp := gdpcap_imp/pop*1e3]
+        res_scc <- setcolorder(gdpcap_yearly, c("ISO3", "year", "model_id","gdpcap", "gdpcap_cc", "gdpcap_imp","gdprate_cc", "gdp_damages_cc","gdp_damages_imp", "SSP", "pop"))
+      } else {
+        res_scc <- ssp_gdpr[,project_gdpcap(.SD),by = c("model_id","ISO3")]
+        # yearly population
+        popyear <- pop[SSP == ssp,approx(year,pop,fyears),by = c("SSP","ISO3")]
+        setnames(popyear,c("x","y"),c("year","pop"))
+        res_scc <- merge(res_scc,popyear,by = c("ISO3","year"))
+        print(Sys.time() - t0)
+      } 
       
       # create main table for world
       res_wscc <- res_scc[,.(gdpcap_cc = weighted.mean(gdpcap_cc,pop)),
                           by = c("year",c("model_id"),"SSP")]
-      
+
       # Compute average annual growth rate of per capita consumption between now and year t
       # for the computation of discount factor
       #countries
@@ -326,7 +381,7 @@ for (.rcp in rcps){
                                          gdprate_cc,
                                          (gdpcap_cc/gdpcap_cc_impulse_year)^(1/(year - impulse_year)) - 1)]
       
-      #Worlres_scc#World
+      #World res_scc
       gdprate_cc_impulse_year = res_wscc[year == impulse_year,
                                          .(gdpcap_cc_impulse_year = gdpcap_cc),
                                          by = c("model_id")]
@@ -341,7 +396,7 @@ for (.rcp in rcps){
       res_wscc[year == impulse_year,gdprate_cc_avg := gdprate_cc_avg_impulse_year]
       res_wscc[,gdprate_cc_avg_impulse_year := NULL]
       print(Sys.time() - t0)
-      
+
       # Compute SCC according to Anthoff and Tol equation A3 in Appendix
       # \dfrac {\partial C_{t}} {\partial E_{0}}\times P_{t}
       # approximate by change in GDP rather than consumption
@@ -350,7 +405,7 @@ for (.rcp in rcps){
                             by = c("year",c("model_id"))]
       res_wscc = merge(res_wscc,sum_res_scc,
                        by = c("year",c("model_id")))
-      
+
       # Extrapolation SCC (before discounting)
       extrapolate_scc <- function(SD){
         if (project_val == "horizon2100") {
@@ -360,12 +415,16 @@ for (.rcp in rcps){
         if (project_val == "constant") {
           .scc = SD[year == 2100,scc]
           .gdpr = (SD[year == 2100,gdpcap_cc]/SD[year == 2100,gdpcap_cc_impulse_year])^(1/(2100 - impulse_year)) - 1
+          print(.gdpr)
+          if (is.na(.gdpr)){
+            .gdpr = 0
+          }
           if (.gdpr < 0) {
             .gdprate_cc_avg = (SD[year == 2100,gdpcap_cc]/SD[year == 2100,gdpcap_cc_impulse_year])^(1/((2101:very_last_year) - impulse_year)) - 1
           } else {
             .gdprate_cc_avg = .gdpr
           }
-        }
+        }  
         return(list(year = 2101:very_last_year, scc = .scc, gdprate_cc_avg = .gdprate_cc_avg))
       }
 
@@ -398,7 +457,7 @@ for (.rcp in rcps){
         }
       }
       wscc = cscc[,list(scc = sum(scc)),by = c("prtp","eta","model_id")]
-
+  
       # Also calculate the world social cost of carbon under equality conditions
       mean_gdp_per_cap_world = weighted.mean(
         gdpcap[year == impulse_year & SSP==ssp]$gdpcap, 
@@ -525,4 +584,5 @@ for (.rcp in rcps){
   }
 }
 print("end")
+
 

@@ -5,7 +5,7 @@
 
 # default option is RCP 4.5, SSP1, eta of 1 and bhm damage function
 # change to option to choose different values? But how to do so within a source function
-source(generate_cscc_test.R)
+source(generate_cscc.R)
 
 # test values from datatable cscc and wscc to say whether the test has passed
 raise_error = list()
