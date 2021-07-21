@@ -13,7 +13,7 @@
 library(dplyr)
 
 warming_effect <- function(temp, temp_prev, gdp_tm1, nid, out_of_sample=T){
-  dam = 0.00236* temp^2
+  dam = 0.00236 * temp^2
   dam_prev =0.00236* temp_prev^2
   damcoeff = dam - dam_prev
   return(damcoeff)

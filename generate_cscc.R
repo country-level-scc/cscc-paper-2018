@@ -27,7 +27,7 @@ options:
 #opts <- docopt(doc)
 
 # Some tests
-opts <- docopt(doc, "-s SSP3 -c rcp85 -w -e 1 -f dice") # Default case
+opts <- docopt(doc, "-s SSP3 -c rcp85 -w -e 1 -f bhm") # Default case
 #opts <- docopt(doc, "-s all -c all -f djo")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
@@ -274,7 +274,8 @@ for (.rcp in rcps){
       .gdp_netto_imp <- rep(NA,length(SD$gdp))
       .gdp_base <- .gdp[1]
       .gdprate_cc[1] <- SD$gdpr[1] 
-      .ref_temp <- SD$temp[1] # reftemp is basetemp for DICE
+      .ref_temp <- SD$temp[1]
+      
       for (i in seq_along(c(fyears))){
         .delta_cc[i] <- warming_effect(SD$temp[i], .ref_temp, .gdp_base, nid)
         # damages for climate change
@@ -285,6 +286,7 @@ for (.rcp in rcps){
         .gdp_damages_imp[i] <- (SD$gdp[i] * .delta_imp[i])
         .gdp_netto_imp[i] <- (SD$gdp[i] * (1 - .delta_imp[i]))
         .gdp_base <- .gdp[i]
+        
         # calculate gdprate_cc
         if (i > 1){
           .gdprate_cc[i] <- (.gdp_netto_cc[i] / .gdp_netto_cc[i-1]) -1
@@ -346,7 +348,7 @@ for (.rcp in rcps){
         ssp_gdp<- gdp_yearly[SSP == ssp & year %in% fyears]
         ssp_gdp <- merge(ssp_gdpr, ssp_gdp, by = c("year","ISO3"))
         res_sccdice <- ssp_gdp[,project_gdpcap_cc_dice(.SD),by = c("model_id","ISO3")]
-        
+
         # generating gdp cap by dividing through population
         popyear <- pop[SSP == ssp,approx(year,pop,fyears), by = c("SSP","ISO3")]
         colnames(popyear) <- c("SSP", "ISO3", "year", "pop")
@@ -365,7 +367,7 @@ for (.rcp in rcps){
         res_scc <- merge(res_scc,popyear,by = c("ISO3","year"))
         print(Sys.time() - t0)
       } 
-      
+
       # create main table for world
       res_wscc <- res_scc[,.(gdpcap_cc = weighted.mean(gdpcap_cc,pop)),
                           by = c("year",c("model_id"),"SSP")]
@@ -396,7 +398,7 @@ for (.rcp in rcps){
       res_wscc[year == impulse_year,gdprate_cc_avg := gdprate_cc_avg_impulse_year]
       res_wscc[,gdprate_cc_avg_impulse_year := NULL]
       print(Sys.time() - t0)
-
+ 
       # Compute SCC according to Anthoff and Tol equation A3 in Appendix
       # \dfrac {\partial C_{t}} {\partial E_{0}}\times P_{t}
       # approximate by change in GDP rather than consumption
@@ -412,10 +414,16 @@ for (.rcp in rcps){
           .scc = 0
           .gdprate_cc_avg = 0
         } 
+        res_wscc[year == 2100,gdpcap_cc]
         if (project_val == "constant") {
           .scc = SD[year == 2100,scc]
           .gdpr = (SD[year == 2100,gdpcap_cc]/SD[year == 2100,gdpcap_cc_impulse_year])^(1/(2100 - impulse_year)) - 1
-          print(.gdpr)
+      # I get a NaN at gdpcap_cc_impulse_year = 1087.387 but cannot find the value in the res_scc so is weird
+         # if (.gdpr == "NaN"){
+          #  print(SD[year == 2100,gdpcap_cc_impulse_year])
+         # }
+          
+          # It worked when I did this and ran it manually
           if (is.na(.gdpr)){
             .gdpr = 0
           }
@@ -585,4 +593,4 @@ for (.rcp in rcps){
 }
 print("end")
 
-
+write.table(cscc, file = file.path("data", paste0(dmg_ref, ".csv")), col.names = FALSE,row.names=FALSE, sep =",")
