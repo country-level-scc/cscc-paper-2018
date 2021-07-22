@@ -1,3 +1,5 @@
+library(data.table)
+library(docopt)
 
 # generate test_result and compare to analytical results
 # all temp increases are set to zero
@@ -5,6 +7,7 @@
 
 # default option is RCP 4.5, SSP1, eta of 1 and bhm damage function
 # change to option to choose different values? But how to do so within a source function
+test = TRUE
 source(generate_cscc.R)
 
 # test values from datatable cscc and wscc to say whether the test has passed

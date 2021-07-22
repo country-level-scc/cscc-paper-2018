@@ -27,7 +27,7 @@ options:
 #opts <- docopt(doc)
 
 # Some tests
-opts <- docopt(doc, "-s SSP3 -c rcp85 -w -e 1 -f bhm") # Default case
+opts <- docopt(doc, "-s SSP1 -c rcp45 -w -e 1 -f bhm") # Default case
 #opts <- docopt(doc, "-s all -c all -f djo")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
@@ -414,7 +414,6 @@ for (.rcp in rcps){
           .scc = 0
           .gdprate_cc_avg = 0
         } 
-        res_wscc[year == 2100,gdpcap_cc]
         if (project_val == "constant") {
           .scc = SD[year == 2100,scc]
           .gdpr = (SD[year == 2100,gdpcap_cc]/SD[year == 2100,gdpcap_cc_impulse_year])^(1/(2100 - impulse_year)) - 1
@@ -513,7 +512,7 @@ for (.rcp in rcps){
       lwscc = c(lwscc, list(wscc[, .(scc, ID)]))
       leq_wscc = c(leq_wscc, list(eq_wscc[, .(scc, ID)]))
     }
-    
+
     cscc = rbindlist(lcscc)
     wscc = rbindlist(lwscc)
     eq_wscc = rbindlist(leq_wscc)
