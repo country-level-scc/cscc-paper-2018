@@ -5,7 +5,20 @@
 
 # default option is RCP 4.5, SSP1, eta of 1 and bhm damage function
 # change to option to choose different values? But how to do so within a source function
-test = TRUE
+
+# change ssp, rcp, dam_func, eta
+test_options <- function(opts){
+  opts["-s"] = "SSP1"
+  opts["-c"] = "rcp45"
+  opts["-r"] = NULL
+  opts["-p"] = NULL
+  opts["-l"] = NULL
+  opts["-e"] = "1"
+  opts["-f"] = "bhm"
+  return(opts)
+}
+
+generate_test = TRUE
 source("generate_cscc.R")
 
 # test values from datatable cscc and wscc to say whether the test has passed

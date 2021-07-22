@@ -1,5 +1,5 @@
 # DICE Damage function on level of economic productivity
-# Uses DICE-2013R
+# Uses DICE-2016R
 
 # http://www.econ.yale.edu/~nordhaus/homepage/homepage/DICE2016R-091916ap.gms
 # Model: impact of climate change = -0.19Tˆ2

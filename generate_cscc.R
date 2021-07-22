@@ -19,7 +19,7 @@ options:
  -o         does not allow for out-of-sample damage prediction (default, allows)
  -d         rich/poor damage function specification (default, pooled)
  -a         5-lag damage function specification (default, 0-lag)
- -f <name>  damage function (default=bhm (Burke et al.), djo (Dell et al.))
+ -f <name>  damage function (default=bhm (Burke et al.), djo (Dell et al.)), dice (Nordhaus)
  -t         allows for generating tests with different temperature inputs
  -w         save raw data' -> doc
 
@@ -27,11 +27,15 @@ options:
 #opts <- docopt(doc)
 
 # Some tests
-opts <- docopt(doc, "-s SSP1 -c rcp45 -w -e 1 -f bhm") # Default case
+opts <- docopt(doc, "-s SSP3 -c rcp85 -w -e 1 -f dice") # Default case
 #opts <- docopt(doc, "-s all -c all -f djo")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -w -d -f djo")
+
+if (exists("generate_test")){
+  opts = test_options(opts)
+}
 
 t0 <- Sys.time()
 
@@ -281,6 +285,9 @@ for (.rcp in rcps){
         # damages for climate change
         .gdp_damages_cc[i] <- (SD$gdp[i] * .delta_cc[i])
         .gdp_netto_cc[i] <- (SD$gdp[i] * (1 - .delta_cc[i]))
+        if (.gdp_netto_cc[i] < 0){
+          .gdp_netto_cc[i] = 0
+        }
         # damages for impulse temp
         .delta_imp[i] <- warming_effect(SD$temp_pulse[i], .ref_temp, .gdp_base, nid)
         .gdp_damages_imp[i] <- (SD$gdp[i] * .delta_imp[i])
@@ -417,15 +424,6 @@ for (.rcp in rcps){
         if (project_val == "constant") {
           .scc = SD[year == 2100,scc]
           .gdpr = (SD[year == 2100,gdpcap_cc]/SD[year == 2100,gdpcap_cc_impulse_year])^(1/(2100 - impulse_year)) - 1
-      # I get a NaN at gdpcap_cc_impulse_year = 1087.387 but cannot find the value in the res_scc so is weird
-         # if (.gdpr == "NaN"){
-          #  print(SD[year == 2100,gdpcap_cc_impulse_year])
-         # }
-          
-          # It worked when I did this and ran it manually
-          if (is.na(.gdpr)){
-            .gdpr = 0
-          }
           if (.gdpr < 0) {
             .gdprate_cc_avg = (SD[year == 2100,gdpcap_cc]/SD[year == 2100,gdpcap_cc_impulse_year])^(1/((2101:very_last_year) - impulse_year)) - 1
           } else {
@@ -438,7 +436,7 @@ for (.rcp in rcps){
       # combine if necessary
       if (project_val != "horizon2100") {
         res_scc_future <- res_scc[,extrapolate_scc(.SD),by = c("ISO3",c("model_id"))]
-        res_wscc_future <- res_wscc[,extrapolate_scc(.SD),by = c("model_id")]
+        #res_wscc_future <- res_wscc[,extrapolate_scc(.SD),by = c("model_id")]
         res_scc <- rbindlist(list(res_scc,res_scc_future),fill = T)
         res_wscc <- rbindlist(list(res_wscc,res_wscc_future),fill = T)
       }
@@ -592,4 +590,4 @@ for (.rcp in rcps){
 }
 print("end")
 
-write.table(cscc, file = file.path("data", paste0(dmg_ref, ".csv")), col.names = FALSE,row.names=FALSE, sep =",")
+# write.table(cscc, file = file.path("results", "cscc_damage_functions", paste0(dmg_ref, ".csv")), col.names = FALSE,row.names=FALSE, sep =",")
