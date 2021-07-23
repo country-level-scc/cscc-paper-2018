@@ -91,11 +91,11 @@ if (is.null(opts[["f"]])) {
   dmg_ref = as.character(opts["f"])
 }
 
-if (is.null(opts[["t"]])){
+if (is.null(opts["-t"])){
   test = FALSE
 } else {
   test = TRUE
-  test_opt = as.character(opts["t"])
+  test_opt = as.character(opts["-t"])
 }
 
 out_of_sample = !opts[['o']]
