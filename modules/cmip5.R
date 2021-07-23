@@ -9,7 +9,7 @@ if ((test == TRUE) & !dir.exists("data/cmip5/RegionalSCC_rcpfits_Test")){
   source("modules/generate_test_input.R")
 }
 
-if (test == TRUE){
+if (test == TRUE) {
   # Load popweighted country with baseline temperature for the test files
   files = Sys.glob(file.path("data","cmip5","RegionalSCC_rcpfits_Test","pop*.csv"))
 } else{

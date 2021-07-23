@@ -19,7 +19,6 @@ sspdb[, year := as.numeric(year)]
 sspdb[, Country := countrycode(ISO3, "iso3c", "country.name")]
 sspdb[, SSP := str_extract(SCENARIO,"SSP\\d")]
 
-
 # Load gdp and population
 
 gdp = sspdb[VARIABLE %in% c("GDP|PPP"), .(SSP,ISO3,year,gdp=value)]
@@ -31,7 +30,7 @@ gdpcap = merge(gdp,pop,by = c("ISO3","year","SSP"))
 gdpcap[, gdpcap := gdp/pop*1e3]
 sspgdpcap = gdpcap[,list(SSP,ISO3,year,gdpcap)]
 
-# Compute annual gowth rate
+# Compute annual growth rate
 annual_gdpg <- function(sd){
   g_years <- seq(sd$year[1], sd$year[length(sd$year)], by = 1)
   annual_gdpcap <- approx(sd$year, sd$gdpcap, g_years)$y

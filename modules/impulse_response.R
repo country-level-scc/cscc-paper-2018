@@ -5,16 +5,23 @@ library(foreach)
 library(stringr)
 
 # if doing a test:
-if ((test == TRUE) & !dir.exists("data/pulse/RegionalSCC_pulseuncertainty_Test")){
-  source("modules/generate_test_pulse_input.R")
+if (test == TRUE) {
+  if ((test_opt == "t1") & (!dir.exists("data/cmip5/RegionalSCC_rcpfits_t1"))){
+    source("modules/generate_test_pulse_input.R")
+  } else if ((test_opt == "t0") & (!dir.exists("data/cmip5/RegionalSCC_rcpfits_t0"))){
+    source("modules/generate_test_pulse_input.R")
+  }
 }
 
 if (test == TRUE){
-  files <- Sys.glob("data/pulse/RegionalSCC_pulseuncertainty_Test/*.csv")
+  if (test_opt == "t0"){
+    files <- Sys.glob("data/pulse/RegionalSCC_pulseuncertainty_t0/*.csv")
+  } else if (test_opt == "t1"){
+    files <- Sys.glob("data/pulse/RegionalSCC_pulseuncertainty_t1/*.csv")
+    }
 } else {files <- Sys.glob("data/pulse/RegionalSCC_pulseuncertainty/*.csv")}  
   
 all_pulse = foreach(f=files) %do% {
-  
   # Load sample temp from one model [temperatures have to be adjusted to baseline]
   pulse = fread(input = f, header = T)
   pulse = melt(pulse, id.vars = c("FAO", "Country", "C Model"), 

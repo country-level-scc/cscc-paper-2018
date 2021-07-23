@@ -7,8 +7,9 @@
 
 library(data.table)
 library(docopt)
+library(dplyr)
 
-'usage: generate_cscc.R -s <ssp> -c <rcp> [ -r <runid> -p <type> -l <clim> -e <eta> -f <name>] [-a] [-o] [-d] [-t] [-w]
+'usage: generate_cscc.R -s <ssp> -c <rcp> [ -r <runid> -p <type> -l <clim> -e <eta> -f <name> -t <opt>] [-a] [-o] [-d] [-w]
 options:
  -s <ssp>   SSP baseline (random(default), SSP1, SSP2,..., SSP5)
  -c <rcp>   RCP (random(default), rcp45, rcp60, rcp85)
@@ -20,7 +21,7 @@ options:
  -d         rich/poor damage function specification (default, pooled)
  -a         5-lag damage function specification (default, 0-lag)
  -f <name>  damage function (default=bhm (Burke et al.), djo (Dell et al.)), dice (Nordhaus)
- -t         allows for generating tests with different temperature inputs
+ -t <opt>   allows for generating tests with different temperature input. t0 (zero temp change) or t1 (1 degree for one year in one country)
  -w         save raw data' -> doc
 
 
@@ -90,10 +91,16 @@ if (is.null(opts[["f"]])) {
   dmg_ref = as.character(opts["f"])
 }
 
+if (is.null(opts[["t"]])){
+  test = FALSE
+} else {
+  test = TRUE
+  test_opt = as.character(opts["t"])
+}
+
 out_of_sample = !opts[['o']]
 rich_poor = opts[['d']]
 lag5 = opts[['a']]
-test = opts[['t']]
 save_raw_data = opts[['w']]
 very_last_year = 2200
 impulse_year = 2020
@@ -158,7 +165,8 @@ for (.rcp in rcps){
     } else if (dmg_ref == "_dice"){
       source("modules/dice_replica.R")
     } else {
-      source("modules/djo_replica.R")}
+      source("modules/djo_replica.R")
+    }
     
     source("modules/cmip5.R")
     source("modules/impulse_response.R")
@@ -266,9 +274,9 @@ for (.rcp in rcps){
                   gdprate_cc = .gdprate_cc
       ))
     }
-    
+
     project_gdpcap_cc_dice <- function(SD){
-      .gdp <- SD$gdp
+      .gdp <- SD$gdp # gdp in billions of 2005 USD
       .gdprate_cc <- rep(NA, length(SD$gdp))
       .delta_cc <- rep(NA,length(SD$gdp))
       .delta_imp <- rep(NA,length(SD$gdp))
@@ -277,19 +285,18 @@ for (.rcp in rcps){
       .gdp_damages_imp <- rep(NA,length(SD$gdp))
       .gdp_netto_imp <- rep(NA,length(SD$gdp))
       .gdp_base <- .gdp[1]
-      .gdprate_cc[1] <- SD$gdpr[1] 
+      .gdprate_cc[1] <- SD$gdpr[1]
+      # basetemp is temp_history from 1900 until 2020 + temp in 2020 so reftemp is from 2020
       .ref_temp <- SD$temp[1]
-      
+
       for (i in seq_along(c(fyears))){
-        .delta_cc[i] <- warming_effect(SD$temp[i], .ref_temp, .gdp_base, nid)
+        .delta_cc[i] <- warming_effect(SD$temp[i], .ref_temp, .gdp_base, nid, out_of_sample=T, temp_history)
         # damages for climate change
         .gdp_damages_cc[i] <- (SD$gdp[i] * .delta_cc[i])
         .gdp_netto_cc[i] <- (SD$gdp[i] * (1 - .delta_cc[i]))
-        if (.gdp_netto_cc[i] < 0){
-          .gdp_netto_cc[i] = 0
-        }
+        
         # damages for impulse temp
-        .delta_imp[i] <- warming_effect(SD$temp_pulse[i], .ref_temp, .gdp_base, nid)
+        .delta_imp[i] <- warming_effect(SD$temp_pulse[i], .ref_temp, .gdp_base, nid, out_of_sample=T, temp_history)
         .gdp_damages_imp[i] <- (SD$gdp[i] * .delta_imp[i])
         .gdp_netto_imp[i] <- (SD$gdp[i] * (1 - .delta_imp[i]))
         .gdp_base <- .gdp[i]
@@ -351,16 +358,18 @@ for (.rcp in rcps){
       setkey(ssp_gdpr,model_id,ISO3)
       print(Sys.time() - t0)
 
-      if (dmg_ref == "_dice"){
-        ssp_gdp<- gdp_yearly[SSP == ssp & year %in% fyears]
+      if (dmg_ref == "_dice") {
+        ssp_gdp <- gdp_yearly[SSP == ssp & year %in% fyears] # gdp in trillions of USD
         ssp_gdp <- merge(ssp_gdpr, ssp_gdp, by = c("year","ISO3"))
         res_sccdice <- ssp_gdp[,project_gdpcap_cc_dice(.SD),by = c("model_id","ISO3")]
 
         # generating gdp cap by dividing through population
-        popyear <- pop[SSP == ssp,approx(year,pop,fyears), by = c("SSP","ISO3")]
+        popyear <- pop[SSP == ssp,approx(year,pop,fyears), by = c("SSP","ISO3")] # population in millions
         colnames(popyear) <- c("SSP", "ISO3", "year", "pop")
+        
+        # converting GDP and GDP damges to gdp per capitan and damages per capita
         gdpcap_yearly <- merge(popyear, res_sccdice, by = c("ISO3","year"))
-        gdpcap_yearly[, gdpcap := gdpcap/pop*1e3]
+        gdpcap_yearly[, gdpcap := gdpcap/pop*1e3] # as gdp is in billions but population in millions, do *1e3 to get dollars
         gdpcap_yearly[, gdp_damages_cc := gdp_damages_cc/pop*1e3]
         gdpcap_yearly[, gdpcap_cc := gdpcap_cc/pop*1e3]
         gdpcap_yearly[, gdp_damages_imp := gdp_damages_imp/pop*1e3]
@@ -429,20 +438,20 @@ for (.rcp in rcps){
           } else {
             .gdprate_cc_avg = .gdpr
           }
-        }  
+        }
         return(list(year = 2101:very_last_year, scc = .scc, gdprate_cc_avg = .gdprate_cc_avg))
       }
 
       # combine if necessary
       if (project_val != "horizon2100") {
         res_scc_future <- res_scc[,extrapolate_scc(.SD),by = c("ISO3",c("model_id"))]
-        #res_wscc_future <- res_wscc[,extrapolate_scc(.SD),by = c("model_id")]
+        res_wscc_future <- res_wscc[,extrapolate_scc(.SD),by = c("model_id")]
         res_scc <- rbindlist(list(res_scc,res_scc_future),fill = T)
         res_wscc <- rbindlist(list(res_wscc,res_wscc_future),fill = T)
       }
       print(Sys.time() - t0)
-      
-      # Discount SCC according to Anthoff and Tol equation A3 in Appendix
+
+      # Disres_scc# Discount SCC according to Anthoff and Tol equation A3 in Appendix
       # elasticity of marginal utility of consumption = 1
       # based on Table 3.2 in IPCC AR5 WG2 Chapter 3
       # added 3% prtp to be compatible with EPA
@@ -474,6 +483,7 @@ for (.rcp in rcps){
       # The Somalian data is bad so we remove it entirely
       eq_cscc <- eq_cscc[ISO3 != "SOM",]
       eq_wscc = eq_cscc[,list(scc = sum(scc * weight)), by = c("prtp","eta","model_id")]
+      
       # Comparison EPA (SC-CO2) [[http://www3.epa.gov/climatechange/EPAactivities/economics/scc.html]]
       drs = c(2.5,3,5) #%
       cscc0 = NULL
@@ -510,7 +520,7 @@ for (.rcp in rcps){
       lwscc = c(lwscc, list(wscc[, .(scc, ID)]))
       leq_wscc = c(leq_wscc, list(eq_wscc[, .(scc, ID)]))
     }
-
+    
     cscc = rbindlist(lcscc)
     wscc = rbindlist(lwscc)
     eq_wscc = rbindlist(leq_wscc)
@@ -589,5 +599,3 @@ for (.rcp in rcps){
   }
 }
 print("end")
-
-# write.table(cscc, file = file.path("results", "cscc_damage_functions", paste0(dmg_ref, ".csv")), col.names = FALSE,row.names=FALSE, sep =",")

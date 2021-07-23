@@ -25,7 +25,8 @@ options:
 
 #my_opts <- docopt(my_doc, "-e 1 -v v4 -t poor_pref_10dollars -r 6.0,4.5,8.5 -f bhm") # Default case
 #my_opts <- docopt(my_doc, "-e 1,2 -v v2 -t eri_eq_statscc_2020d -r 8.5 -f bhm,djo") 
-my_opts <- docopt(my_doc, "-e 2 -t poor_pref_10dollars -r 6.0 -s 4 -c true -f bhm") 
+#my_opts <- docopt(my_doc, "-e 1 -t poor_pref_10dollars -r 8.5 -s 3 -f dice") 
+my_opts <- docopt(my_doc, "-e 1 -t eri_eq_statscc_2020d -r 8.5 -s 3 -f dice") 
 #my_opts <- docopt(my_doc)
 
 # unpack variables from the options
@@ -47,14 +48,13 @@ if (is.null(my_opts[["t"]])){
 } else{type_str = as.character(my_opts[["t"]])}  
 
 variable_rcp = c()
-if (length(grep(4.5, my_opts[["r"]]) != 0)){
-#if (grepl(4.5, my_opts[["r"]])){
+if (grepl(4.5, my_opts[["r"]])){
   variable_rcp <- append(variable_rcp, 45)
 } 
-if (length(grep(6.0, my_opts[["r"]]) != 0)){
+if (grepl(6.0, my_opts[["r"]])){
   variable_rcp <- append(variable_rcp, 60)
 } 
-if (length(grep(8.5, my_opts[["r"]])) != 0){
+if (grepl(8.5, my_opts[["r"]])){
   variable_rcp <- append(variable_rcp, 85)
 } 
 if (length(variable_rcp) == 0){variable_rcp = c(45,60,85)}
@@ -69,9 +69,13 @@ if (is.null(my_opts[["p"]]) || (my_opts[["p"]]== "all") ){
   variable_timeframe = c("horizon2100")
 } else {variable_timeframe = c("constant", "horizon2100")}  
   
-if (!is.null(my_opts)){
+if (!is.null(my_opts[["c"]])){
   test = TRUE
-}
+  results_dir = "/results_test"
+} else {
+  test = FALSE
+  results_dir = "/results"
+  }
 
 if (is.null(my_opts[["f"]])) {
   dmg_f = "bhm"     # bhm is default damage function
@@ -81,10 +85,6 @@ if (is.null(my_opts[["f"]])) {
 
 # Conversion factor
 dollar_val_2020 = 1.35
-
-if (test == TRUE){
-  results_dir = "/results_test"
-} else {results_dir = "/results"}
   
 namefun <- function(x, y, z, timeframe){
   paste0(results_dir, "/res_statbhm_30C/", type_str, "SSP", x, "_rcp", y, 
@@ -98,7 +98,10 @@ namefun_nocut <- function(x, y, z, timeframe){
   paste0(results_dir, "/res_statbhm/", type_str, "SSP", x, "_rcp", y, 
          "_", timeframe, "_estimates_climensemble_", "eta_", z, ".RData") 
 }
-
+namefun_dice <- function(x, y, z){
+  paste0(results_dir, "/res_statdice/", type_str, "SSP", x, "_rcp", y, 
+        "_constant_estimates_climensemble_dice_", "eta_", z, ".RData") 
+}
 filelist=c()
 
 if (grepl("djo", dmg_f)){
@@ -131,6 +134,15 @@ if (grepl("bhm", dmg_f)){
   }
 }
 
+if (grepl("dice", dmg_f)){
+  for (y in variable_rcp){
+    for (z in variable_risk){
+      filelist2 = lapply(ssp_plot, namefun_dice, y=y, z=z)
+      filelist=c(filelist, filelist2)
+    }
+  }
+}  
+
 results_table <- data.table(ssp=integer(), rcp=numeric(), eta=numeric(), PRTP=numeric(), damages=character(), indicator=character(), value=numeric())
 columns_to_save = c("mean")
 origin = getwd()
@@ -140,7 +152,7 @@ for (file in filelist) {
   sspnum = as.numeric(substr(strsplit(file, split = "SSP")[[1]][2], 1, 1))
   rcpnum = substr(strsplit(file, split = "rcp")[[1]][2], 1, 2)
   rcpnum = sub("(.{1})(.*)", "\\1.\\2", rcpnum)
-  damages = if(grepl("djo", file)) "Dell" else (if (grepl("horizon2100", file)) "Burke 2100" else "Burke 2200")
+  damages = if(grepl("djo", file)) "Dell" else if(grepl("dice", file)) "Dice" else (if (grepl("horizon2100", file)) "Burke 2100" else "Burke 2200")
   if (grepl("_30C", file)){
     damages = str_c(damages, " 30C")
   }
