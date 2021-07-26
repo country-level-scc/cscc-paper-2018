@@ -29,7 +29,7 @@ options:
 
 # set options
 if (!exists("generate_test")){
-  opts <- docopt(doc, "-s SSP1 -c rcp45 -w -e 1 -t t1 -f djo") # Default case
+  opts <- docopt(doc, "-s all -c all -w -e 1 -f dice") # Default case
   #opts <- docopt(doc, "-s all -c all -f djo")
   #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
   #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
@@ -291,7 +291,9 @@ for (.rcp in rcps){
       for (i in seq_along(c(fyears))){
         .delta_cc[i] <- warming_effect(SD$temp[i], .ref_temp, .gdp_base, nid, out_of_sample=T, temp_history)
         # damages for climate change
+        # Damages = Ygross * damfrac in bllions of USD per year
         .gdp_damages_cc[i] <- (SD$gdp[i] * .delta_cc[i])
+        # Ynet = Ygross * (damage function) output net in billions of USD per year
         .gdp_netto_cc[i] <- (SD$gdp[i] * (1 - .delta_cc[i]))
         # damages for impulse temp
         .delta_imp[i] <- warming_effect(SD$temp_pulse[i], .ref_temp, .gdp_base, nid, out_of_sample=T, temp_history)
@@ -305,8 +307,6 @@ for (.rcp in rcps){
       }
       return(list(year = fyears,
                   gdpcap = .gdp,
-                  warming_cc = .delta_cc,
-                  warming_imp = .delta_imp,
                   gdpcap_cc = .gdp_netto_cc,
                   gdpcap_imp = .gdp_netto_imp,
                   gdp_damages_cc = .gdp_damages_cc,
