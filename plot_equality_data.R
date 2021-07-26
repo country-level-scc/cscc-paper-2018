@@ -21,12 +21,12 @@ options:
  -s SSP baseline (all(default), 1, 2,..., 5. ))
  -p Projection type. (constant (default), horizon2100, all)
  -c Check in order to do a test
- -f Damage function (default=bhm (Burke et al.), djo (Dell et al.). separate by columns)' -> my_doc
+ -f Damage function (default=bhm (Burke et al.), djo (Dell et al.), dice. separate by columns)' -> my_doc
 
 #my_opts <- docopt(my_doc, "-e 1 -v v4 -t poor_pref_10dollars -r 6.0,4.5,8.5 -f bhm") # Default case
 #my_opts <- docopt(my_doc, "-e 1,2 -v v2 -t eri_eq_statscc_2020d -r 8.5 -f bhm,djo") 
 #my_opts <- docopt(my_doc, "-e 1 -t poor_pref_10dollars -r 8.5 -s 3 -f dice") 
-my_opts <- docopt(my_doc, "-e 1 -t eri_eq_statscc_2020d -r 8.5 -s 3 -f dice") 
+my_opts <- docopt(my_doc, "-e 1 -t poor_pref_10dollars -r all -s all -f bhm,djo,dice") 
 #my_opts <- docopt(my_doc)
 
 # unpack variables from the options
