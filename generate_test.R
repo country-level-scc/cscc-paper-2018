@@ -22,23 +22,33 @@ test_options <- function(opts){
 generate_test = TRUE
 source("generate_cscc.R")
 
+if (opts["-f"] == "bhm"){
+  value = 0.08361
+} else if (opts["-f"] == "dice"){
+  value = 0.0002548864
+} else { value = 0.01844812 } # value for djo option
+
 # test values from datatable cscc and wscc to say whether the test has passed
 # check for default values
-if(opts["-f"] == "bhm"){
+if (test_opt == "t0") {
+  for (i in 1:nrow(cscc)){
+    if (cscc[[1]][i] != 0){
+      raise_error[[(length(raise_error) + 1)]] <- i # append the row number to list to know where error occurred
+    }
+  }
+} else if (test_opt == "t1"){
   raise_error = list()
   for (i in 1:nrow(cscc)){
     if ((cscc[[1]][i] != 0) & (grepl("AGO",cscc[[2]][i]) == FALSE)){
-      print("Test has failed, cscc is non-zero for countries without a temperature impulse")
       raise_error[[(length(raise_error) + 1)]] <- i # append the row number to list to know where error occurred
     }
     if (grepl("AGO",cscc[[2]][i])){
-      if (!(cscc$scc[2] < 0.08445 ) & (cscc$scc[2] > 0.08277)){ # answer should be around 0.08361, so take 1% marge
-        print("Test has failed, SCC for Angola is not within range")
+      if (!(cscc$scc[2] < (value*1.01)) & (cscc$scc[2] > (value*0.99))){ # answer should be around value, so take 1% margin
         raise_error[[(length(raise_error) + 1)]] <- i # append the row number to list 
       }
     }
   }
-}
+} 
 
 if (length(raise_error) == 0){
     print("Test passed")
@@ -48,4 +58,4 @@ if (length(raise_error) == 0){
     row = raise_error[[1]]
     rows_error = paste0(rows_error, row)
   }
-  print(paste0("The errors occured in row(s): ", rows_error))}
+  print(paste0("Test has failed. The errors occured in row(s): ", rows_error))}

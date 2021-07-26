@@ -28,7 +28,7 @@ options:
 #opts <- docopt(doc)
 
 # Some tests
-opts <- docopt(doc, "-s SSP3 -c rcp85 -w -e 1 -f dice") # Default case
+opts <- docopt(doc, "-s SSP1 -c rcp45 -w -e 1 -t t1 -f djo") # Default case
 #opts <- docopt(doc, "-s all -c all -f djo")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
 #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
@@ -91,7 +91,7 @@ if (is.null(opts[["f"]])) {
   dmg_ref = as.character(opts["f"])
 }
 
-if (is.null(opts["-t"])){
+if (is.null(opts[["-t"]])){
   test = FALSE
 } else {
   test = TRUE
@@ -288,19 +288,16 @@ for (.rcp in rcps){
       .gdprate_cc[1] <- SD$gdpr[1]
       # basetemp is temp_history from 1900 until 2020 + temp in 2020 so reftemp is from 2020
       .ref_temp <- SD$temp[1]
-
       for (i in seq_along(c(fyears))){
         .delta_cc[i] <- warming_effect(SD$temp[i], .ref_temp, .gdp_base, nid, out_of_sample=T, temp_history)
         # damages for climate change
         .gdp_damages_cc[i] <- (SD$gdp[i] * .delta_cc[i])
         .gdp_netto_cc[i] <- (SD$gdp[i] * (1 - .delta_cc[i]))
-        
         # damages for impulse temp
         .delta_imp[i] <- warming_effect(SD$temp_pulse[i], .ref_temp, .gdp_base, nid, out_of_sample=T, temp_history)
         .gdp_damages_imp[i] <- (SD$gdp[i] * .delta_imp[i])
         .gdp_netto_imp[i] <- (SD$gdp[i] * (1 - .delta_imp[i]))
         .gdp_base <- .gdp[i]
-        
         # calculate gdprate_cc
         if (i > 1){
           .gdprate_cc[i] <- (.gdp_netto_cc[i] / .gdp_netto_cc[i-1]) -1
@@ -308,6 +305,8 @@ for (.rcp in rcps){
       }
       return(list(year = fyears,
                   gdpcap = .gdp,
+                  warming_cc = .delta_cc,
+                  warming_imp = .delta_imp,
                   gdpcap_cc = .gdp_netto_cc,
                   gdpcap_imp = .gdp_netto_imp,
                   gdp_damages_cc = .gdp_damages_cc,
@@ -414,7 +413,7 @@ for (.rcp in rcps){
       res_wscc[year == impulse_year,gdprate_cc_avg := gdprate_cc_avg_impulse_year]
       res_wscc[,gdprate_cc_avg_impulse_year := NULL]
       print(Sys.time() - t0)
- 
+
       # Compute SCC according to Anthoff and Tol equation A3 in Appendix
       # \dfrac {\partial C_{t}} {\partial E_{0}}\times P_{t}
       # approximate by change in GDP rather than consumption
@@ -599,3 +598,4 @@ for (.rcp in rcps){
   }
 }
 print("end")
+
