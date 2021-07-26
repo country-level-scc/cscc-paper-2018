@@ -27,15 +27,15 @@ options:
 
 #opts <- docopt(doc)
 
-# Some tests
-opts <- docopt(doc, "-s SSP1 -c rcp45 -w -e 1 -t t1 -f djo") # Default case
-#opts <- docopt(doc, "-s all -c all -f djo")
-#opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
-#opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
-#opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -w -d -f djo")
-
-if (exists("generate_test")){
-  opts = test_options(opts)
+# set options
+if (!exists("generate_test")){
+  opts <- docopt(doc, "-s SSP1 -c rcp45 -w -e 1 -t t1 -f djo") # Default case
+  #opts <- docopt(doc, "-s all -c all -f djo")
+  #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
+  #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
+  #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -w -d -f djo")
+} else if (generate_test == TRUE){
+  opts = test_options
 }
 
 t0 <- Sys.time()
@@ -596,6 +596,9 @@ for (.rcp in rcps){
     
     print(Sys.time() - t0)
   }
+}
+if (exists("generate_test")){
+  rm(generate_test)
 }
 print("end")
 

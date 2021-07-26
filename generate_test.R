@@ -7,17 +7,24 @@
 # change to option to choose different values? But how to do so within a source function
 
 # change ssp, rcp, dam_func, eta
-test_options <- function(opts){
-  opts["-s"] = "SSP1"
-  opts["-c"] = "rcp45"
-  opts["-r"] = NULL
-  opts["-t"] = "t1" # default test method where angola increases by 1 degree for one year
-  opts["-p"] = NULL
-  opts["-l"] = NULL
-  opts["-e"] = "1"
-  opts["-f"] = "bhm"
-  return(opts)
-}
+
+'usage: generate_test.R -s <ssp> -c <rcp> [ -r <runid> -p <type> -l <clim> -e <eta> -f <name> -t <opt>] [-a] [-o] [-d] [-w]
+options:
+ -s <ssp>   SSP baseline (random(default), SSP1, SSP2,..., SSP5)
+ -c <rcp>   RCP (random(default), rcp45, rcp60, rcp85)
+ -r <runid> Bootstart run for the damage function parameter, 0 is estimates (0<=id<=1000)
+ -p <type>  projection type (constant (default),horizon2100)
+ -l <clim>  climate models (ensemble (default), mean[-ensemble])
+ -e <eta>   elasticity of marginal utility of consumption. eta is 1 (default) or 2
+ -o         does not allow for out-of-sample damage prediction (default, allows)
+ -d         rich/poor damage function specification (default, pooled)
+ -a         5-lag damage function specification (default, 0-lag)
+ -f <name>  damage function (default=bhm (Burke et al.), djo (Dell et al.)), dice (Nordhaus)
+ -t <opt>   allows for generating tests with different temperature input. t0 (zero temp change) or t1 (1 degree for one year in one country)
+ -w         save raw data' -> doc
+
+# specify test options
+test_options <- docopt(doc, "-s SSP1 -c rcp45 -w -e 1 -t t1 -f bhm") # Default case
 
 generate_test = TRUE
 source("generate_cscc.R")
