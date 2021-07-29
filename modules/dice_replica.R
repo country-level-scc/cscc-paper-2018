@@ -9,9 +9,8 @@
 # Dataset for temperature accessed 2021-07-22 at https://data.giss.nasa.gov/gistemp/
 # contains temperature anomalies in degrees Celcius compared to mean from 1951-1980
 temp_csv = fread(file.path('data','NASA_temp_change_1900-2020.csv'))
-temp_anomaly = select(temp_csv, "Year","J-D") # select yearly anomaly 
 anomaly_years <- c(1900,2020)
-temp_anomaly <- temp_anomaly[Year %in% anomaly_years] 
+temp_anomaly <- temp_csv[Year %in% anomaly_years] 
 # find increase of temperature from 1900 to 2020 by taking the difference of the anomalies
 temp_history <- as.numeric(temp_anomaly[Year == 2020, "J-D"][[1]]) - as.numeric(temp_anomaly[Year == 1900, "J-D"][[1]])
 

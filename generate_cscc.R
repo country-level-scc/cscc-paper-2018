@@ -7,7 +7,6 @@
 
 library(data.table)
 library(docopt)
-library(dplyr)
 
 'usage: generate_cscc.R -s <ssp> -c <rcp> [ -r <runid> -p <type> -l <clim> -e <eta> -f <name> -t <opt>] [-a] [-o] [-d] [-w]
 options:
@@ -29,7 +28,7 @@ options:
 
 # set options
 if (!exists("generate_test")){
-  opts <- docopt(doc, "-s all -c all -w -e 1 -f dice") # Default case
+  opts <- docopt(doc, "-s ssp1 -c rcp45 -t t1 -e 1 -f dice") # Default case
   #opts <- docopt(doc, "-s all -c all -f djo")
   #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
   #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
@@ -358,7 +357,7 @@ for (.rcp in rcps){
       print(Sys.time() - t0)
 
       if (dmg_ref == "_dice") {
-        ssp_gdp <- gdp_yearly[SSP == ssp & year %in% fyears] # gdp in trillions of USD
+        ssp_gdp <- gdp_yearly[SSP == ssp & year %in% fyears] # gdp in billions of USD
         ssp_gdp <- merge(ssp_gdpr, ssp_gdp, by = c("year","ISO3"))
         res_sccdice <- ssp_gdp[,project_gdpcap_cc_dice(.SD),by = c("model_id","ISO3")]
 
@@ -450,7 +449,8 @@ for (.rcp in rcps){
       }
       print(Sys.time() - t0)
 
-      # Disres_scc# Discount SCC according to Anthoff and Tol equation A3 in Appendix
+      
+      # Discount SCC according to Anthoff and Tol equation A3 in Appendix
       # elasticity of marginal utility of consumption = 1
       # based on Table 3.2 in IPCC AR5 WG2 Chapter 3
       # added 3% prtp to be compatible with EPA
@@ -600,5 +600,6 @@ for (.rcp in rcps){
 if (exists("generate_test")){
   rm(generate_test)
 }
+
 print("end")
 

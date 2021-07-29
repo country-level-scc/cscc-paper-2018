@@ -24,16 +24,22 @@ options:
  -w         save raw data' -> doc
 
 # specify test options
-test_options <- docopt(doc, "-s SSP1 -c rcp45 -w -e 1 -t t1 -f bhm") # Default case
+test_options <- docopt(doc, "-s SSP1 -c rcp45 -w -e 1 -t t1 -f dice") # Default case
 
 generate_test = TRUE
 source("generate_cscc.R")
 
 if (opts["-f"] == "bhm"){
+  # derived from gdpcap_imp = gdpcap * (gdpr + gdpr_damage_imp) and gdpcap_cc = gdpcap * (gdpr - gdpr_damage_cc)
+  # -(gdpcap_imp - gdpcap_cc) * pop * 1 (= 10ˆ6 : pulse_scale) and then discounting by 1/(1 + prtp/100 + eta * gdprate_cc_avg)^1
   value = 0.08361
 } else if (opts["-f"] == "dice"){
-  value = 0.0002548864
-} else { value = 0.01844812 } # value for djo option
+  # derived from -(gdpcap * (damage_coeff_imp - damage_coeff_cc)) * pop and then discounting 
+  value = 0.0002481195
+} else { 
+  # derived from gdpcap_imp = gdpcap * (gdpr + gdpr_damage_imp) and gdpcap_cc = gdpcap * (gdpr - gdpr_damage_cc)
+  # -(gdpcap_imp - gdpcap_cc) * pop and then discounting 
+  value = 0.01844812 } # value for djo option
 
 # test values from datatable cscc and wscc to say whether the test has passed
 # check for default values
@@ -50,7 +56,7 @@ if (test_opt == "t0") {
       raise_error[[(length(raise_error) + 1)]] <- i # append the row number to list to know where error occurred
     }
     if (grepl("AGO",cscc[[2]][i])){
-      if (!(cscc$scc[2] < (value*1.01)) & (cscc$scc[2] > (value*0.99))){ # answer should be around value, so take 1% margin
+      if (!(cscc$scc[2] < (value + 1e-10) & (cscc$scc[2] > (value - 1e-10)))){ # answer should be around value, with 1e-10 for computational error
         raise_error[[(length(raise_error) + 1)]] <- i # append the row number to list 
       }
     }
@@ -65,4 +71,5 @@ if (length(raise_error) == 0){
     row = raise_error[[1]]
     rows_error = paste0(rows_error, row)
   }
-  print(paste0("Test has failed. The errors occured in row(s): ", rows_error))}
+  print(paste0("Test has failed. The errors occured in row(s): ", rows_error))
+}
