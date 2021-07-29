@@ -31,10 +31,10 @@ source("generate_cscc.R")
 
 if (opts["-f"] == "bhm"){
   # derived from gdpcap_imp = gdpcap * (gdpr + gdpr_damage_imp) and gdpcap_cc = gdpcap * (gdpr - gdpr_damage_cc)
-  # -(gdpcap_imp - gdpcap_cc) * pop * 1 (= 10ˆ6 : pulse_scale) and then discounting by 1/(1 + prtp/100 + eta * gdprate_cc_avg)^1
+  # -(gdpcap_imp - gdpcap_cc) * pop * 1 (= 1e6/pulse_scale) and then discounting by 1/(1 + prtp/100 + eta * gdprate_cc_avg)^1
   value = 0.08361
 } else if (opts["-f"] == "dice"){
-  # derived from -(gdpcap * (damage_coeff_imp - damage_coeff_cc)) * pop and then discounting 
+  # derived from -(gdp * (damage_coeff_imp - damage_coeff_cc)) * 1e6/pulse_scale and then discounting 
   value = 0.0002481195
 } else { 
   # derived from gdpcap_imp = gdpcap * (gdpr + gdpr_damage_imp) and gdpcap_cc = gdpcap * (gdpr - gdpr_damage_cc)

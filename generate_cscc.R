@@ -28,7 +28,7 @@ options:
 
 # set options
 if (!exists("generate_test")){
-  opts <- docopt(doc, "-s ssp1 -c rcp45 -t t1 -e 1 -f dice") # Default case
+  opts <- docopt(doc, "-s SSP3 -c rcp85 -t t1 -e 1 -f dice") # Default case
   #opts <- docopt(doc, "-s all -c all -f djo")
   #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 1 -w -a -d")
   #opts <- docopt(doc, "-s SSP2 -c rcp60 -r 0 -l mean -w -a -d")
@@ -283,21 +283,22 @@ for (.rcp in rcps){
       .gdp_netto_cc <- rep(NA,length(SD$gdp))
       .gdp_damages_imp <- rep(NA,length(SD$gdp))
       .gdp_netto_imp <- rep(NA,length(SD$gdp))
-      .gdp_base <- .gdp[1]
       .gdprate_cc[1] <- SD$gdpr[1]
       # basetemp is temp_history from 1900 until 2020 + temp in 2020 so reftemp is from 2020
       .ref_temp <- SD$temp[1]
       for (i in seq_along(c(fyears))){
+        .gdp_base = SD$gdp[i]
         .delta_cc[i] <- warming_effect(SD$temp[i], .ref_temp, .gdp_base, nid, out_of_sample=T, temp_history)
         # damages for climate change
         # Damages = Ygross * damfrac in bllions of USD per year
-        .gdp_damages_cc[i] <- (SD$gdp[i] * .delta_cc[i])
+        .gdp_damages_cc[i] <- (.gdp_base * .delta_cc[i])
         # Ynet = Ygross * (damage function) output net in billions of USD per year
-        .gdp_netto_cc[i] <- (SD$gdp[i] * (1 - .delta_cc[i]))
+        .gdp_netto_cc[i] <- (.gdp_base * (1 - .delta_cc[i]))
         # damages for impulse temp
         .delta_imp[i] <- warming_effect(SD$temp_pulse[i], .ref_temp, .gdp_base, nid, out_of_sample=T, temp_history)
-        .gdp_damages_imp[i] <- (SD$gdp[i] * .delta_imp[i])
-        .gdp_netto_imp[i] <- (SD$gdp[i] * (1 - .delta_imp[i]))
+        .gdp_damages_imp[i] <- (.gdp_base * .delta_imp[i])
+        .gdp_netto_imp[i] <- (.gdp_base  * (1 - .delta_imp[i]))
+        
         .gdp_base <- .gdp[i]
         # calculate gdprate_cc
         if (i > 1){
@@ -323,6 +324,8 @@ for (.rcp in rcps){
       
       # Create dataset for SSP
       # ISO3 x model x ccmodel x years
+      #View(growthrate)
+      #ssp_gr <- growthrate[year %in% fyears]
       ssp_gr <- growthrate[SSP == ssp & year %in% fyears]
       if (clim == "ensemble") {
         ssp_temp <- ctemp[rcp == .rcp & year %in% fyears]
