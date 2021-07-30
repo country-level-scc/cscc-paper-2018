@@ -24,9 +24,10 @@ options:
  -f Damage function (default=bhm (Burke et al.), djo (Dell et al.), dice. separate by columns)' -> my_doc
 
 #my_opts <- docopt(my_doc, "-e 1 -v v4 -t poor_pref_10dollars -r 6.0,4.5,8.5 -f bhm") # Default case
-#my_opts <- docopt(my_doc, "-e 1,2 -v v2 -t eri_eq_statscc_2020d -r 8.5 -f bhm,djo") 
+my_opts <- docopt(my_doc, "-e 1,2 -t poor_pref_10dollars -r all -s all -f bhm,dice,djo") 
 #my_opts <- docopt(my_doc, "-e 1 -t poor_pref_10dollars -r 8.5 -s 3 -f dice") 
-my_opts <- docopt(my_doc, "-e 1 -t poor_pref_10dollars -r all -s all -f bhm,djo,dice") 
+#my_opts <- docopt(my_doc, "-e 1,2 -t poor_pref_10dollars -r all -s all -f bhm,djo,dice") 
+#my_opts <- docopt(my_doc, "-e 1,2 -t eri_eq_statscc_2020d -r all -s all -f bhm,djo,dice") 
 #my_opts <- docopt(my_doc)
 
 # unpack variables from the options
@@ -59,15 +60,15 @@ if (grepl(8.5, my_opts[["r"]])){
 } 
 if (length(variable_rcp) == 0){variable_rcp = c(45,60,85)}
 
-if (my_opts[["s"]] == "all") {
+if (my_opts[["s"]] == "all" || is.null(my_opts[["s"]])) {
   ssp_plot = c(1:5) # SSP{1,2,3,4,5
 } else {ssp_plot = c(as.character(my_opts[["s"]]))}
 
-if (is.null(my_opts[["p"]]) || (my_opts[["p"]]== "all") ){
-  variable_timeframe = c("constant")
+if ((is.null(my_opts[["p"]]) || my_opts[["p"]]== "all")){
+  variable_timeframe = c("constant", "horizon2100")
 } else if (my_opts[["p"]]== "horizon2100"){
   variable_timeframe = c("horizon2100")
-} else {variable_timeframe = c("constant", "horizon2100")}  
+} else {variable_timeframe = c("constant")}  
   
 if (!is.null(my_opts[["c"]])){
   test = TRUE
@@ -114,7 +115,8 @@ if (grepl("djo", dmg_f)){
 }  
 
 if (grepl("bhm", dmg_f)){
-  if (dir.exists("/results_test/res_statbhm_30C")){
+  dir_30C <- str_sub(results_dir, 2, str_length(results_dir))
+  if (dir.exists(paste0(dir_30C, "/res_statbhm_30C"))){
     for (y in variable_rcp){
       for (z in variable_risk){
         for (timeframe in variable_timeframe){
