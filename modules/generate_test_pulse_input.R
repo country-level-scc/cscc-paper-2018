@@ -7,7 +7,8 @@ t0_pulse <- function(files) {
   for (f in files) {
     # Load sample temp from one model
     pulse_data <- fread(f)
-    start_model = as.data.frame(str_locate_all(pattern="fromfit_", f)) # start specific name at the variable for model where fromfit_ ends
+    # start specific name at the variable for model where fromfit_ ends
+    start_model = as.data.frame(str_locate_all(pattern="fromfit_", f)) 
     name_model =  substr(f, start = start_model[[2]][1]+1, stop = nchar(f)-4)
     # set all temp pulses to 0
     for (i in 1:nrow(pulse_data)){
@@ -15,7 +16,8 @@ t0_pulse <- function(files) {
         pulse_data[[k]][i] <- 0
       }
     }
-    write.table(pulse_data, file = file.path(subDir, paste0("popweightcountry", "_fromfit", "_", name_model,".csv")),row.names=FALSE, sep =",")
+    write.table(pulse_data, file = file.path(subDir, paste0("popweightcountry", "_fromfit", "_", name_model,".csv")),
+      row.names=FALSE, sep =",")
   }
 }
 
@@ -23,7 +25,8 @@ t1_pulse <- function(files) {
   for (f in files) {
     # Load sample temp from one model
     pulse_data <- fread(f)
-    start_model = as.data.frame(str_locate_all(pattern="fromfit_", f)) # start specific name at the variable for model where fromfit_ ends
+    # start specific name at the variable for model where fromfit_ ends
+    start_model = as.data.frame(str_locate_all(pattern="fromfit_", f)) 
     name_model =  substr(f, start = start_model[[2]][1]+1, stop = nchar(f)-4)
     # set all temperature pulses to 0
     for (i in 1:nrow(pulse_data)){
@@ -36,7 +39,8 @@ t1_pulse <- function(files) {
         pulse_data[[5]][i] <- temp_change # change pulse for year 2021
       }
     }
-    write.table(pulse_data, file = file.path(subDir, paste0("popweightcountry", "_fromfit", "_", name_model,".csv")),row.names=FALSE, sep =",")
+    write.table(pulse_data, file = file.path(subDir, paste0("popweightcountry", "_fromfit", "_", name_model,".csv")),
+                row.names=FALSE, sep =",")
   }
 }
 

@@ -262,7 +262,8 @@ for (.rcp in rcps){
         .gdpcap_cc[i] <- .gdpcap_tm1_cc * (1 + .gdprate_cc[i])
         .gdpcap_tm1_cc <- .gdpcap_cc[i]
         # With climate change and pulse
-        .gdpcap_imp[i] <- .gdpcap_tm1_imp * (1 + (SD$gdpr[i] + warming_effect(SD$temp_pulse[i], .ref_temp, .gdpcap_tm1_imp, nid, out_of_sample)))
+        .gdpcap_imp[i] <- .gdpcap_tm1_imp * (1 + (SD$gdpr[i] + warming_effect(
+          SD$temp_pulse[i], .ref_temp, .gdpcap_tm1_imp, nid, out_of_sample)))
         .gdpcap_tm1_imp <- .gdpcap_imp[i]
         if (reftemplastyear) {.ref_temp <- SD$temp[i]}
       }
@@ -375,7 +376,8 @@ for (.rcp in rcps){
         gdpcap_yearly[, gdpcap_cc := gdpcap_cc/pop*1e3]
         gdpcap_yearly[, gdp_damages_imp := gdp_damages_imp/pop*1e3]
         gdpcap_yearly[, gdpcap_imp := gdpcap_imp/pop*1e3]
-        res_scc <- setcolorder(gdpcap_yearly, c("ISO3", "year", "model_id","gdpcap", "gdpcap_cc", "gdpcap_imp","gdprate_cc", "gdp_damages_cc","gdp_damages_imp", "SSP", "pop"))
+        res_scc <- setcolorder(gdpcap_yearly, 
+          c("ISO3", "year", "model_id","gdpcap", "gdpcap_cc", "gdpcap_imp","gdprate_cc", "gdp_damages_cc","gdp_damages_imp", "SSP", "pop"))
       } else {
         res_scc <- ssp_gdpr[,project_gdpcap(.SD),by = c("model_id","ISO3")]
         # yearly population
@@ -435,7 +437,8 @@ for (.rcp in rcps){
           .scc = SD[year == 2100,scc]
           .gdpr = (SD[year == 2100,gdpcap_cc]/SD[year == 2100,gdpcap_cc_impulse_year])^(1/(2100 - impulse_year)) - 1
           if (.gdpr < 0) {
-            .gdprate_cc_avg = (SD[year == 2100,gdpcap_cc]/SD[year == 2100,gdpcap_cc_impulse_year])^(1/((2101:very_last_year) - impulse_year)) - 1
+            .gdprate_cc_avg = (SD[year == 2100,gdpcap_cc]/
+                                 SD[year == 2100,gdpcap_cc_impulse_year])^(1/((2101:very_last_year) - impulse_year)) - 1
           } else {
             .gdprate_cc_avg = .gdpr
           }

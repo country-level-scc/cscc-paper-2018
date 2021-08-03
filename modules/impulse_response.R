@@ -18,7 +18,7 @@ if (test == TRUE){
     files <- Sys.glob("data/pulse/RegionalSCC_pulseuncertainty_t0/*.csv")
   } else if (test_opt == "t1"){
     files <- Sys.glob("data/pulse/RegionalSCC_pulseuncertainty_t1/*.csv")
-    }
+  }
 } else {files <- Sys.glob("data/pulse/RegionalSCC_pulseuncertainty/*.csv")}  
   
 all_pulse = foreach(f=files) %do% {

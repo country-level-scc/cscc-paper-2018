@@ -7,6 +7,7 @@
 # change to option to choose different values? But how to do so within a source function
 
 # change ssp, rcp, dam_func, eta
+library(docopt)
 
 'usage: generate_test.R -s <ssp> -c <rcp> [ -r <runid> -p <type> -l <clim> -e <eta> -f <name> -t <opt>] [-a] [-o] [-d] [-w]
 options:
@@ -34,8 +35,11 @@ if (opts["-f"] == "bhm"){
   # -(gdpcap_imp - gdpcap_cc) * pop * 1 (= 1e6/pulse_scale) and then discounting by 1/(1 + prtp/100 + eta * gdprate_cc_avg)^1
   value = 0.08361
 } else if (opts["-f"] == "dice"){
-  # derived from -(gdp * (damage_coeff_imp - damage_coeff_cc)) * 1e6/pulse_scale and then discounting 
-  value = 0.0002481195
+  # derived from -(gdp * (damage_coeff_imp - damage_coeff_cc)) * 1e6/pulse_scale and then discounting
+  test_temp_dif = 1e-3 / 44 * 12 * (pulse_scale * 1e-9)
+  GDPval_ago = ssp_gdp[SSP=="SSP1"&ISO3=="AGO"&year==2021]$gdp[1]
+  # GDP is in billions so add factor of 1e9. Discount by 1 year. 
+  value = 0.00236 * ((test_temp_dif + temp_history) ** 2 - temp_history**2) * GDPval_ago * 1e9/pulse_scale / (1 + 0.025)
 } else { 
   # derived from gdpcap_imp = gdpcap * (gdpr + gdpr_damage_imp) and gdpcap_cc = gdpcap * (gdpr - gdpr_damage_cc)
   # -(gdpcap_imp - gdpcap_cc) * pop and then discounting 
