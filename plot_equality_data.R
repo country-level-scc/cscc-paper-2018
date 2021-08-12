@@ -21,10 +21,11 @@ options:
  -s SSP baseline (all(default), 1, 2,..., 5. ))
  -p Projection type. (constant (default), horizon2100, all)
  -c Check in order to do a test
- -f Damage function (default=bhm (Burke et al.), djo (Dell et al.), dice. separate by columns)' -> my_doc
+ -f Damage functions (default=bhm (Burke et al.), djo (Dell et al.), dice, nice 
+    (if additional data has been imported). Separate these options by commas)' -> my_doc
 
 #my_opts <- docopt(my_doc, "-e 1 -v v4 -t poor_pref_10dollars -r 6.0,4.5,8.5 -f bhm") # Default case
-my_opts <- docopt(my_doc, "-e 1,2 -t poor_pref_10dollars -r all -s all -f bhm,dice,djo") 
+my_opts <- docopt(my_doc, "-e 1,2 -t poor_pref_10dollars -v nicedice_v4 -r all -s all -f bhm,dice,djo,nice") 
 #my_opts <- docopt(my_doc, "-e 1 -t poor_pref_10dollars -r 8.5 -s 3 -f dice") 
 #my_opts <- docopt(my_doc, "-e 1,2 -t poor_pref_10dollars -r all -s all -f bhm,djo,dice") 
 #my_opts <- docopt(my_doc, "-e 1,2 -t eri_eq_statscc_2020d -r all -s all -f bhm,djo,dice") 
@@ -145,7 +146,9 @@ if (grepl("dice", dmg_f)){
   }
 }  
 
-results_table <- data.table(ssp=integer(), rcp=numeric(), eta=numeric(), PRTP=numeric(), damages=character(), indicator=character(), value=numeric())
+
+results_table <- data.table(ssp=integer(), rcp=numeric(), eta=numeric(), PRTP=numeric(), 
+                            damages=character(), indicator=character(), value=numeric())
 columns_to_save = c("mean")
 origin = getwd()
 compare_results = results_table
@@ -154,7 +157,8 @@ for (file in filelist) {
   sspnum = as.numeric(substr(strsplit(file, split = "SSP")[[1]][2], 1, 1))
   rcpnum = substr(strsplit(file, split = "rcp")[[1]][2], 1, 2)
   rcpnum = sub("(.{1})(.*)", "\\1.\\2", rcpnum)
-  damages = if(grepl("djo", file)) "Dell" else if(grepl("dice", file)) "Dice" else (if (grepl("horizon2100", file)) "Burke 2100" else "Burke 2200")
+  damages = if(grepl("djo", file)) "Dell" else if(grepl("dice", file)) "Dice" else (
+    if (grepl("horizon2100", file)) "Burke 2100" else "Burke 2200")
   if (grepl("_30C", file)){
     damages = str_c(damages, " 30C")
   }
@@ -188,7 +192,34 @@ for (file in filelist) {
     }
   }
 }
-compare_results$value = compare_results$value * dollar_val_2020
+if (type_str == "poor_pref_10dollars"){
+  compare_results$value = compare_results$value * dollar_val_2020  
+}
+if (grepl("nice", dmg_f)){
+  nice_data <- read.csv("./data/nice_imports/interpolated_scc_scenarios_v4_2025.csv")
+  nice_data$ssp = substr(nice_data$Scenario, 4, 4)
+  nice_data$rcp = sapply(nice_data$Scenario, function(x) strsplit(x, "-")[[1]][2])
+  nice_data$rcp[nice_data$rcp=="Baseline"] = "85"
+  nice_data_poor = nice_data[nice_data$whose=="poorest", ]
+  len_nice = nrow(nice_data_poor)
+  nice_results_table <- data.table(
+    ssp=integer(), rcp=numeric(), eta=numeric(), PRTP=numeric(), damages=rep("NICE", len_nice), 
+    indicator=rep("mean", len_nice), value=numeric())
+  nice_results_table$ssp = nice_data_poor$ssp
+  nice_results_table$rcp = nice_data_poor$rcp
+  nice_results_table$PRTP = as.integer(nice_data_poor$prtp * 100)
+  nice_results_table$eta = nice_data_poor$eta
+  nice_results_table$value = nice_data_poor$scc
+  if (type_str == "poor_pref_10dollars") {
+    # The post-abatement cost, post-damages income of the poorest group in the NICE model in 2025.
+    poorest_nice = 0.34 * 1e3 
+    nice_results_table$value = poorest_nice * (nice_results_table$value / 10)**(-1/nice_results_table$eta)
+    results_table = rbind(results_table, nice_results_table)
+  } else {
+    results_table = rbind(results_table, nice_results_table)
+  }
+}
+
 
 if(type_str == "eri_eq_statscc_2020d"){
   plot_labs = labs(
@@ -218,11 +249,10 @@ plot = ggplot(results_table, aes(x=rcp, y=value, color=SSP))+geom_point(
 if (type_str != "eri_eq_statscc_2020d"){
   plot = plot + geom_hline(yintercept=1.9*365)
   plot = plot + geom_hline(yintercept=500, color="red")
-  plot = plot + scale_y_continuous(trans = "log2")
 } else {
   plot = plot + geom_hline(yintercept=10)
-  plot = plot + scale_y_continuous(trans = "log2")
 }
+plot = plot + scale_y_continuous(trans = "log2")
 
 plot
 
